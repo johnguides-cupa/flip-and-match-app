@@ -57,6 +57,8 @@ class SlotMachine {
         this.updatePrizeDisplay();
         //this.updateGameInfo();
         this.populateReels();
+        
+        // Initialize animations (will handle both cards and reels)
         this.initializeAnimations();
         
         // Start background ambience after a short delay
@@ -184,6 +186,7 @@ class SlotMachine {
 
     populateReels() {
         const prizes = storageManager.getPrizes();
+        // animationManager will auto-detect if using cards or reels
         animationManager.populateReels(prizes);
     }
 

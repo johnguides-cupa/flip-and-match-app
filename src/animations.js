@@ -106,7 +106,7 @@ class AnimationManager {
         };
     }
 
-    // Create reel items for animation
+    // Create reel items for animation (DEPRECATED - kept for compatibility)
     createReelItems(prizes, defaultPrize = null) {
         const items = [];
         
@@ -135,8 +135,223 @@ class AnimationManager {
         return item;
     }
 
-    // Populate reels with items
+    // ===== CARD GAME METHODS =====
+    
+    // Initialize cards with prize images
+    initializeCards(prizes) {
+        const cards = document.querySelectorAll('.card');
+        if (cards.length === 0) {
+            console.warn('No cards found in DOM');
+            return;
+        }
+        
+        // Set initial card positions
+        cards.forEach((card, index) => {
+            card.dataset.position = index;
+            card.classList.remove('flipped');
+            
+            // Set a random prize image on each card (will be updated on flip)
+            const randomPrize = prizes[Math.floor(Math.random() * prizes.length)];
+            const img = card.querySelector('.card-prize-image');
+            if (img) {
+                img.src = randomPrize.image;
+                img.alt = randomPrize.name;
+            }
+        });
+        
+        // Start continuous shuffle animation
+        this.startCardShuffle();
+    }
+
+    // Continuous card shuffle animation with random intervals
+    startCardShuffle() {
+        this.stopCardShuffle();
+        
+        const cards = document.querySelectorAll('.card');
+        if (cards.length !== 3) return;
+        
+        this.shuffleTimeline = gsap.timeline({ repeat: -1 });
+        
+        // Shuffle animation: swap card positions randomly
+        const shuffleSequence = () => {
+            // Random delay between shuffles (1-3 seconds)
+            const delay = 1 + Math.random() * 2;
+            
+            // Random pair to swap (0-1, 1-2, or 0-2)
+            const swapPairs = [[0, 1], [1, 2], [0, 2], [0, 1]];
+            const [pos1, pos2] = swapPairs[Math.floor(Math.random() * swapPairs.length)];
+            
+            return { delay, pos1, pos2 };
+        };
+        
+        // Create shuffle timeline
+        for (let i = 0; i < 50; i++) { // 50 shuffles in the loop
+            const { delay, pos1, pos2 } = shuffleSequence();
+            
+            this.shuffleTimeline.call(() => {
+                this.swapCardPositions(pos1, pos2);
+            }, [], `+=${delay}`);
+        }
+    }
+
+    // Swap two cards by position (using absolute positioning for smooth animation)
+    swapCardPositions(pos1, pos2) {
+        const cardsArea = document.querySelector('.cards-area');
+        if (!cardsArea) return;
+        
+        const cards = Array.from(cardsArea.querySelectorAll('.card'));
+        const card1 = cards.find(c => parseInt(c.dataset.position) === pos1);
+        const card2 = cards.find(c => parseInt(c.dataset.position) === pos2);
+        
+        if (!card1 || !card2) return;
+        
+        // Get target positions based on data-position
+        const positions = {
+            0: 'calc(50% - 440px)',
+            1: 'calc(50% - 140px)',
+            2: 'calc(50% + 160px)'
+        };
+        
+        const duration = this.performanceMode === 'performance' ? 0.6 : 0.8;
+        
+        // Get current computed left values
+        const card1Left = card1.getBoundingClientRect().left - cardsArea.getBoundingClientRect().left;
+        const card2Left = card2.getBoundingClientRect().left - cardsArea.getBoundingClientRect().left;
+        
+        // Animate to each other's positions with arc
+        gsap.to(card1, {
+            left: card2Left,
+            top: -30,
+            duration: duration / 2,
+            ease: 'power1.inOut',
+            onComplete: () => {
+                gsap.to(card1, {
+                    top: 0,
+                    duration: duration / 2,
+                    ease: 'power1.inOut',
+                    onComplete: () => {
+                        // Update position and set to CSS calc value
+                        card1.dataset.position = pos2;
+                        card1.style.left = positions[pos2];
+                        card1.style.top = '0';
+                    }
+                });
+            }
+        });
+        
+        gsap.to(card2, {
+            left: card1Left,
+            top: -30,
+            duration: duration / 2,
+            ease: 'power1.inOut',
+            onComplete: () => {
+                gsap.to(card2, {
+                    top: 0,
+                    duration: duration / 2,
+                    ease: 'power1.inOut',
+                    onComplete: () => {
+                        // Update position and set to CSS calc value
+                        card2.dataset.position = pos1;
+                        card2.style.left = positions[pos1];
+                        card2.style.top = '0';
+                    }
+                });
+            }
+        });
+    }
+
+    // Stop card shuffle
+    stopCardShuffle() {
+        if (this.shuffleTimeline) {
+            this.shuffleTimeline.kill();
+            this.shuffleTimeline = null;
+        }
+        
+        // Reset cards to their position-based locations
+        const cards = document.querySelectorAll('.card');
+        const positions = {
+            0: 'calc(50% - 440px)',
+            1: 'calc(50% - 140px)',
+            2: 'calc(50% + 160px)'
+        };
+        
+        cards.forEach(card => {
+            gsap.killTweensOf(card);
+            const pos = parseInt(card.dataset.position);
+            card.style.left = positions[pos];
+            card.style.top = '0';
+        });
+    }
+
+    // Flip cards animation (one by one from left to right)
+    async flipCards(cardPrizes) {
+        if (this.isSpinning) return;
+        this.isSpinning = true;
+        
+        // Stop shuffle animation
+        this.stopCardShuffle();
+        
+        const spinButton = document.getElementById('spinButton');
+        spinButton.disabled = true;
+        spinButton.querySelector('.button-text').textContent = 'FLIPPING...';
+        
+        // Get cards sorted by position
+        const cards = Array.from(document.querySelectorAll('.card'))
+            .sort((a, b) => parseInt(a.dataset.position) - parseInt(b.dataset.position));
+        
+        // Set prize images before flipping
+        cards.forEach((card, index) => {
+            const img = card.querySelector('.card-prize-image');
+            if (img && cardPrizes[index]) {
+                img.src = cardPrizes[index].image;
+                img.alt = cardPrizes[index].name;
+            }
+        });
+        
+        // Play drumroll sound effect before first card flip
+        if (window.soundManager && typeof window.soundManager.onDrumroll === 'function') {
+            window.soundManager.onDrumroll();
+        }
+        
+        // Flip each card sequentially
+        const flipDuration = this.performanceMode === 'performance' ? 0.4 : 0.6;
+        const delayBetween = this.performanceMode === 'performance' ? 0.3 : 0.5;
+        
+        for (let i = 0; i < cards.length; i++) {
+            // Add 1 second delay before first card flip (for drumroll)
+            const extraDelay = i === 0 ? 1000 : 0;
+            
+            await new Promise(resolve => {
+                setTimeout(() => {
+                    cards[i].classList.add('flipped');
+                    
+                    // Play card flip sound
+                    if (window.soundManager) {
+                        window.soundManager.onCardFlip();
+                    }
+                    
+                    setTimeout(resolve, flipDuration * 1000);
+                }, (i * delayBetween * 1000) + extraDelay);
+            });
+        }
+        
+        // Small delay before showing prize popup
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        return cards;
+    }
+
+    // Populate reels with items (DEPRECATED - for card game, use initializeCards)
     populateReels(prizes) {
+        // Check if we're using cards or reels
+        const cards = document.querySelectorAll('.card');
+        if (cards.length > 0) {
+            // Card game mode
+            this.initializeCards(prizes);
+            return;
+        }
+        
+        // Legacy reel mode (fallback)
         const reels = document.querySelectorAll('.reel');
         
         reels.forEach((reel, index) => {
@@ -180,8 +395,41 @@ class AnimationManager {
         this.idleTimelines = [];
     }
 
-    // Spin animation with precise landing
+    // Spin animation with precise landing (supports both reels and cards)
     async spinReels(targetPrize, prizes, slotIcons) {
+        // Check if we're using cards or reels
+        const cards = document.querySelectorAll('.card');
+        if (cards.length > 0) {
+            // Card game mode
+            await this.flipCards(slotIcons);
+            
+            // Show prize popup
+            this.showPrizePopup(targetPrize);
+            
+            // Re-enable button
+            const spinButton = document.getElementById('spinButton');
+            spinButton.disabled = false;
+            spinButton.querySelector('.button-text').textContent = 'FLIP!';
+            this.isSpinning = false;
+            
+            // Reset cards after popup is closed
+            const closeButton = document.getElementById('closePopup');
+            const resetHandler = () => {
+                setTimeout(() => {
+                    // Unflip all cards
+                    cards.forEach(card => card.classList.remove('flipped'));
+                    
+                    // Restart shuffle
+                    this.initializeCards(prizes);
+                }, 300);
+                closeButton.removeEventListener('click', resetHandler);
+            };
+            closeButton.addEventListener('click', resetHandler);
+            
+            return;
+        }
+        
+        // Legacy reel mode (fallback)
         if (this.isSpinning) return;
         this.isSpinning = true;
 
@@ -373,6 +621,11 @@ class AnimationManager {
 
     // Show prize won popup with celebration
     showPrizePopup(prize) {
+        // Stop drumroll when modal appears
+        if (window.soundManager && typeof window.soundManager.stopDrumroll === 'function') {
+            window.soundManager.stopDrumroll();
+        }
+        
         const popup = document.getElementById('prizePopup');
         const prizeImage = document.getElementById('wonPrizeImage');
         const prizeName = document.getElementById('wonPrizeName');

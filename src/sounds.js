@@ -846,6 +846,149 @@ class SoundManager {
     onReelStop() {
         this.playSound('reelStop');
     }
+    
+    // Card flip sound effect (generated)
+    onCardFlip() {
+        if (this.isMuted) return;
+        
+        // Generate a quick "whoosh" sound for card flip
+        if (this.audioContext) {
+            const now = this.audioContext.currentTime;
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+            
+            // Quick descending tone
+            oscillator.frequency.setValueAtTime(800, now);
+            oscillator.frequency.exponentialRampToValueAtTime(200, now + 0.1);
+            
+            // Quick fade in and out
+            gainNode.gain.setValueAtTime(0, now);
+            gainNode.gain.linearRampToValueAtTime(0.15 * this.volume, now + 0.02);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            
+            oscillator.start(now);
+            oscillator.stop(now + 0.15);
+        }
+    }
+    
+    // Drumroll sound effect (suspense before first flip) - cute playful anticipation sound
+    onDrumroll() {
+        if (this.isMuted) {
+            console.log('🔇 Drumroll skipped: sound is muted');
+            return;
+        }
+        
+        // Generate a cute, playful anticipation sound
+        if (this.audioContext) {
+            // Resume audio context if suspended (required by browsers)
+            if (this.audioContext.state === 'suspended') {
+                this.audioContext.resume().then(() => {
+                    console.log('🔊 Audio context resumed for drumroll');
+                });
+            }
+            
+            console.log('✨ Playing cute anticipation sound');
+            const now = this.audioContext.currentTime;
+            const duration = 3.5;
+            
+            // Create a playful bouncing/bubbling sound with ascending tones
+            const mainGain = this.audioContext.createGain();
+            mainGain.connect(this.audioContext.destination);
+            
+            this.drumrollOscillators = [];
+            
+            // Generate cute bouncing tones (like excited anticipation)
+            const numBounces = 28; // Cute bouncing sounds
+            for (let i = 0; i < numBounces; i++) {
+                const progress = i / numBounces;
+                const bounceTime = now + (progress * duration);
+                
+                // Create oscillator for each bounce
+                const osc = this.audioContext.createOscillator();
+                osc.type = 'sine'; // Soft, cute sine wave
+                
+                // Playful ascending melody (major scale intervals)
+                const baseFreq = 400;
+                const scaleSteps = [0, 2, 4, 5, 7, 9, 11, 12]; // Major scale
+                const note = scaleSteps[i % scaleSteps.length];
+                const octaveBoost = Math.floor(i / scaleSteps.length) * 12;
+                const freq = baseFreq * Math.pow(2, (note + octaveBoost) / 12);
+                
+                osc.frequency.setValueAtTime(freq, bounceTime);
+                
+                // Quick vibrato for cuteness
+                osc.frequency.linearRampToValueAtTime(freq * 1.02, bounceTime + 0.05);
+                
+                const bounceGain = this.audioContext.createGain();
+                
+                // Cute envelope (quick attack, gentle decay)
+                const velocity = 0.15 + (progress * 0.15); // Gets slightly louder
+                bounceGain.gain.setValueAtTime(0, bounceTime);
+                bounceGain.gain.linearRampToValueAtTime(velocity * this.volume, bounceTime + 0.01);
+                bounceGain.gain.exponentialRampToValueAtTime(0.001, bounceTime + 0.12);
+                
+                osc.connect(bounceGain);
+                bounceGain.connect(mainGain);
+                
+                osc.start(bounceTime);
+                osc.stop(bounceTime + 0.12);
+                
+                this.drumrollOscillators.push(osc);
+            }
+            
+            // Add a gentle sustained tone underneath for continuity
+            const sustainOsc = this.audioContext.createOscillator();
+            sustainOsc.type = 'triangle'; // Warmer sound
+            sustainOsc.frequency.setValueAtTime(300, now);
+            sustainOsc.frequency.linearRampToValueAtTime(500, now + duration); // Gentle rise
+            
+            const sustainGain = this.audioContext.createGain();
+            sustainGain.gain.setValueAtTime(0, now);
+            sustainGain.gain.linearRampToValueAtTime(0.08 * this.volume, now + 0.5);
+            sustainGain.gain.linearRampToValueAtTime(0.12 * this.volume, now + duration - 0.3);
+            
+            sustainOsc.connect(sustainGain);
+            sustainGain.connect(mainGain);
+            
+            sustainOsc.start(now);
+            sustainOsc.stop(now + duration);
+            
+            this.drumrollOscillators.push(sustainOsc);
+            this.drumrollGain = mainGain;
+            
+        } else {
+            console.warn('⚠️ Audio context not available for drumroll');
+        }
+    }
+    
+    // Stop drumroll early (when modal appears)
+    stopDrumroll() {
+        if (this.drumrollOscillators && this.drumrollOscillators.length > 0) {
+            console.log('🛑 Stopping anticipation sound');
+            const now = this.audioContext.currentTime;
+            
+            // Gracefully stop all oscillators
+            this.drumrollOscillators.forEach(osc => {
+                try {
+                    osc.stop(now + 0.05);
+                } catch (e) {
+                    // Already stopped
+                }
+            });
+            
+            if (this.drumrollGain) {
+                this.drumrollGain.gain.cancelScheduledValues(now);
+                this.drumrollGain.gain.setValueAtTime(this.drumrollGain.gain.value, now);
+                this.drumrollGain.gain.linearRampToValueAtTime(0.001, now + 0.05);
+            }
+            
+            this.drumrollOscillators = [];
+            this.drumrollGain = null;
+        }
+    }
 
     onWin(isJackpot = false) {
         if (isJackpot) {

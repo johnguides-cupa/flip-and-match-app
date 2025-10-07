@@ -2,7 +2,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Booth Slot Machine</title>
+    <title>Card Flip & Match Game</title>
     <link rel="stylesheet" href="src/styles.css">
 </head>
 <body>
@@ -17,7 +17,7 @@
         <div class="title-lights"></div>
     </div> -->
     
-    <!-- Complete Slot Machine Cabinet -->
+    <!-- Complete Card Flip Game Cabinet -->
     <div class="slot-machine-cabinet">
         <!-- Prize Showcase (Info Display) -->
         <div class="prize-showcase">
@@ -25,31 +25,44 @@
             <div id="prizeList" class="prize-list"></div>
         </div>
 
-        <!-- Slot Machine Container (Main Reels) -->
-        <div class="slot-container">
-            <div class="slot-machine">
-                <div class="winning-box hidden" id="winningBox"></div>
-                <div class="reel" id="reel1">
-                    <div class="reel-strip"></div>
+        <!-- Card Game Container -->
+        <div class="card-game-container">
+            <div class="cards-area">
+                <div class="card" id="card1" data-position="0">
+                    <div class="card-inner">
+                        <div class="card-back"></div>
+                        <div class="card-front">
+                            <img src="" alt="Prize" class="card-prize-image">
+                        </div>
+                    </div>
                 </div>
-                <div class="reel" id="reel2">
-                    <div class="reel-strip"></div>
+                <div class="card" id="card2" data-position="1">
+                    <div class="card-inner">
+                        <div class="card-back"></div>
+                        <div class="card-front">
+                            <img src="" alt="Prize" class="card-prize-image">
+                        </div>
+                    </div>
                 </div>
-                <div class="reel" id="reel3">
-                    <div class="reel-strip"></div>
+                <div class="card" id="card3" data-position="2">
+                    <div class="card-inner">
+                        <div class="card-back"></div>
+                        <div class="card-front">
+                            <img src="" alt="Prize" class="card-prize-image">
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Control Panel (Machine Body) -->
-        <div class="control-panel">
-            <button id="spinButton" class="spin-button">
-                <span class="button-text">SPIN!</span>
-                <div class="button-glow"></div>
-            </button>
-            <!-- <div class="game-info">
-                <p id="modeDisplay">Probability Mode</p>
-            </div> -->
+            
+            <!-- Control Panel (Machine Body) -->
+            <div class="control-panel">
+                <button id="spinButton" class="spin-button">
+                    <span class="button-text">FLIP!</span>
+                    <div class="button-glow"></div>
+                </button>
+                <!-- <div class="game-info">
+                    <p id="modeDisplay">Probability Mode</p>
+                </div> -->
             </div>
         </div>
     </div>
