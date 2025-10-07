@@ -1,0 +1,140 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booth Slot Machine</title>
+  <script type="module" crossorigin src="/slot-machine-app/assets/index-CuO-_CR-.js"></script>
+  <link rel="stylesheet" crossorigin href="/slot-machine-app/assets/index-jOX1sOcN.css">
+</head>
+<body>
+    <!-- Header Logo -->
+    <div class="header-logo">
+        <img src="/slot-machine-app/assets/images/Pursuing Potential Logo.png" alt="Pursuing Potential Logo" 
+             onerror="this.src='/slot-machine-app/assets/images/Pursuing Potential Logo.png'" />
+    </div>
+    <!-- Machine Title (Outside Cabinet) -->
+    <!-- <div class="machine-title">
+        <h1>Ronaldos Casino</h1>
+        <div class="title-lights"></div>
+    </div> -->
+    
+    <!-- Complete Slot Machine Cabinet -->
+    <div class="slot-machine-cabinet">
+        <!-- Prize Showcase (Info Display) -->
+        <div class="prize-showcase">
+            <h2>Available Prizes</h2>
+            <div id="prizeList" class="prize-list"></div>
+        </div>
+
+        <!-- Slot Machine Container (Main Reels) -->
+        <div class="slot-container">
+            <div class="slot-machine">
+                <div class="winning-box hidden" id="winningBox"></div>
+                <div class="reel" id="reel1">
+                    <div class="reel-strip"></div>
+                </div>
+                <div class="reel" id="reel2">
+                    <div class="reel-strip"></div>
+                </div>
+                <div class="reel" id="reel3">
+                    <div class="reel-strip"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Control Panel (Machine Body) -->
+        <div class="control-panel">
+            <button id="spinButton" class="spin-button">
+                <span class="button-text">SPIN!</span>
+                <div class="button-glow"></div>
+            </button>
+            <!-- <div class="game-info">
+                <p id="modeDisplay">Probability Mode</p>
+            </div> -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Prize Won Popup -->
+    <div id="prizePopup" class="prize-popup hidden">
+        <div class="popup-content">
+            <div class="prize-shield">🏆</div>
+            <h2 id="prizePopupTitle">Congratulations!</h2>
+            <div class="won-prize">
+                <img id="wonPrizeImage" src="" alt="Prize">
+                <h3 id="wonPrizeName"></h3>
+            </div>
+            <button id="closePopup" class="close-button">Continue</button>
+        </div>
+    </div>
+
+    <!-- Admin Confirmation Modal -->
+    <div id="adminConfirmModal" class="admin-confirm-modal hidden">
+        <div class="admin-confirm-content">
+            <div class="admin-confirm-icon">🔐</div>
+            <h2>Admin Access</h2>
+            <p>Are you really an admin?</p>
+            <div class="admin-confirm-buttons">
+                <button id="adminConfirmYes" class="admin-btn admin-btn-yes">Yes</button>
+                <button id="adminConfirmNo" class="admin-btn admin-btn-no">No</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="adminPanel" class="admin-panel hidden">
+        <div class="admin-content">
+            <div class="admin-header">
+                <h2>Admin Panel</h2>
+                <button id="closeAdmin" class="close-admin">×</button>
+            </div>
+            
+            <div class="admin-tabs">
+                <button class="tab-button active" data-tab="prizes">Prizes</button>
+                <button class="tab-button" data-tab="settings">Settings</button>
+                <button class="tab-button" data-tab="logs">Logs</button>
+            </div>
+
+            <div id="prizesTab" class="tab-content active">
+                <div class="prizes-section">
+                    <button id="addPrize" class="add-prize-btn">Add New Prize</button>
+                    <div id="prizeEditor" class="prize-editor hidden">
+                        <h3 id="editorTitle">Add New Prize</h3>
+                        <input type="text" id="prizeName" placeholder="Prize Name">
+                        <input type="url" id="prizeImage" placeholder="Image URL">
+                        <div class="quantity-control">
+                            <button type="button" class="quantity-btn minus-btn" data-target="prizeQuantity">−</button>
+                            <input type="number" id="prizeQuantity" placeholder="Quantity" min="0" value="0">
+                            <button type="button" class="quantity-btn plus-btn" data-target="prizeQuantity">+</button>
+                        </div>
+                        <input type="number" id="prizeChance" placeholder="Win Chance %" min="0" max="100" step="0.1">
+                        <div class="editor-buttons">
+                            <button id="savePrize" class="save-btn">Save</button>
+                            <button id="cancelEdit" class="cancel-btn">Cancel</button>
+                        </div>
+                    </div>
+                    <div id="prizesList" class="prizes-list"></div>
+                </div>
+            </div>
+
+            <div id="settingsTab" class="tab-content">
+                <div class="settings-section">
+                    <h3>Game Settings</h3>
+                    <p>The slot machine uses probability-based mode where each spin has independent chances based on the prize percentages you set.</p>
+                    <button id="resetGame" class="reset-btn">Reset Game & Clear Logs</button>
+                </div>
+            </div>
+
+            <div id="logsTab" class="tab-content">
+                <div class="logs-section">
+                    <h3>Spin Logs</h3>
+                    <div id="spinLogs" class="logs-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</body>
+</html>
