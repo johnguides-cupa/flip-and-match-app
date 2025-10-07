@@ -447,6 +447,13 @@ class SoundManager {
             bottomControls = document.createElement('div');
             bottomControls.className = 'bottom-controls';
             document.body.appendChild(bottomControls);
+            
+            // Listen for orientation changes and reposition controls
+            this.repositionControls();
+            window.addEventListener('resize', () => this.repositionControls());
+            window.addEventListener('orientationchange', () => {
+                setTimeout(() => this.repositionControls(), 100);
+            });
         }
 
         const soundControl = document.createElement('div');
@@ -813,6 +820,28 @@ class SoundManager {
             console.log('Testing spin sound...');
             this.testSound('spin');
         });
+    }
+
+    // Reposition controls based on orientation
+    repositionControls() {
+        const bottomControls = document.querySelector('.bottom-controls');
+        const headerLogo = document.querySelector('.header-logo');
+        
+        if (!bottomControls || !headerLogo) return;
+        
+        const isLandscape = window.innerWidth > window.innerHeight;
+        
+        if (isLandscape) {
+            // Move controls to header in landscape mode
+            if (bottomControls.parentElement !== headerLogo) {
+                headerLogo.appendChild(bottomControls);
+            }
+        } else {
+            // Move controls back to body in portrait mode
+            if (bottomControls.parentElement !== document.body) {
+                document.body.appendChild(bottomControls);
+            }
+        }
     }
 
     // Update volume button appearance

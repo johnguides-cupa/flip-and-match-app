@@ -2014,3 +2014,293 @@ body {
 .hidden {
     display: none !important;
 }
+
+/* Landscape orientation optimizations */
+@media (orientation: landscape) {
+    body {
+        min-height: 100vh;
+        max-height: 100vh;
+        overflow: hidden; /* Prevent vertical scrolling */
+        padding: clamp(5px, 0.5vh, 10px);
+        gap: clamp(5px, 1vh, 15px);
+        justify-content: center; /* Center vertically in landscape */
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+    }
+
+    /* Shrink header logo in landscape and move controls to right */
+    .header-logo {
+        margin-top: max(5px, 0.5vh);
+        margin-bottom: max(3px, 0.3vh);
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 20px;
+        padding: 0 clamp(10px, 2vw, 30px);
+    }
+
+    .header-logo img {
+        height: clamp(90px, 40vh, 160px); /* Larger logo */
+        max-width: min(750px, 80vw); /* More width allowance */
+        margin-bottom: 0;
+        justify-self: center;
+        object-fit: contain; /* Maintain aspect ratio */
+    }
+
+    /* Move bottom controls to header right side */
+    .bottom-controls {
+        margin: 0 !important;
+        padding: 0 !important;
+        order: 2;
+        justify-self: end;
+        align-self: center;
+        display: flex !important;
+        flex-direction: row !important; /* Horizontal layout for controls */
+        align-items: center !important;
+        gap: clamp(8px, 1vw, 12px) !important;
+        flex-wrap: nowrap !important;
+    }
+
+    .sound-control {
+        order: 1;
+        display: flex;
+        align-items: center;
+    }
+
+    .admin-button {
+        order: 2;
+        width: clamp(35px, 5vh, 45px) !important;
+        height: clamp(35px, 5vh, 45px) !important;
+        font-size: clamp(1em, 2vh, 1.3em) !important;
+        margin-left: 0 !important;
+        flex-shrink: 0;
+    }
+
+    .performance-control {
+        order: 3;
+        margin-left: 0 !important;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .performance-button {
+        width: clamp(35px, 5vh, 45px) !important;
+        height: clamp(35px, 5vh, 45px) !important;
+        font-size: clamp(1em, 2vh, 1.3em) !important;
+        margin-left: 0 !important;
+        flex-shrink: 0;
+    }
+
+    .performance-label {
+        font-size: clamp(0.65em, 1.3vh, 0.8em) !important;
+        padding: clamp(4px, 0.8vh, 6px) clamp(6px, 1vw, 10px) !important;
+        white-space: nowrap;
+    }
+
+    .sound-controls {
+        padding: clamp(6px, 1vh, 10px) clamp(10px, 1.5vw, 14px) !important;
+        gap: clamp(6px, 1vw, 10px) !important;
+        border-radius: 20px !important;
+    }
+
+    .mute-button,
+    .test-sound-button {
+        width: clamp(30px, 4.5vh, 40px) !important;
+        height: clamp(30px, 4.5vh, 40px) !important;
+        font-size: clamp(1em, 2vh, 1.2em) !important;
+        padding: 0 !important;
+        flex-shrink: 0;
+    }
+
+    .volume-slider {
+        width: clamp(60px, 10vw, 100px) !important;
+        height: 4px !important;
+    }
+
+    .volume-label {
+        font-size: clamp(0.7em, 1.4vh, 0.85em) !important;
+        min-width: 35px;
+        text-align: center;
+    }
+
+    /* Adjust cabinet to horizontal layout */
+    .slot-machine-cabinet {
+        max-width: min(95vw, 1600px);
+        margin: 0 auto;
+        display: flex;
+        flex-direction: row; /* Horizontal layout */
+        align-items: stretch;
+        gap: clamp(10px, 1.5vw, 20px);
+        padding: clamp(15px, 2vh, 25px);
+    }
+
+    /* Prize showcase on the LEFT - EXTENDED */
+    .prize-showcase {
+        order: 1; /* First position */
+        flex-direction: column; /* Vertical stack */
+        width: clamp(140px, 18vw, 220px); /* Wider for more prizes */
+        min-height: auto;
+        max-height: 100%;
+        padding: clamp(10px, 1vh, 15px);
+        gap: clamp(8px, 1vh, 12px);
+        overflow-y: auto; /* Scrollable */
+        overflow-x: hidden;
+    }
+
+    .prize-showcase h2 {
+        font-size: clamp(0.9em, 1.8vh, 1.2em);
+        margin-bottom: clamp(8px, 1vh, 12px);
+    }
+
+    .prize-list {
+        display: flex;
+        flex-direction: column;
+        gap: clamp(8px, 1vh, 12px);
+        flex: 1;
+    }
+
+    .prize-item {
+        width: 100%;
+        height: auto;
+        min-height: clamp(90px, 12vh, 130px);
+        padding: clamp(8px, 1vh, 12px);
+    }
+
+    .prize-item img {
+        width: clamp(45px, 7vh, 80px);
+        height: clamp(45px, 7vh, 80px);
+    }
+
+    .prize-name {
+        font-size: clamp(0.6em, 1.4vh, 0.8em);
+    }
+
+    .prize-quantity {
+        font-size: clamp(0.5em, 1.1vh, 0.65em);
+    }
+
+    /* Card game container in the CENTER */
+    .card-game-container {
+        order: 2; /* Middle position */
+        flex: 1; /* Take remaining space */
+        min-height: auto;
+        max-height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: clamp(15px, 2vh, 30px) clamp(10px, 1vw, 20px);
+    }
+
+    .cards-area {
+        min-height: clamp(350px, 55vh, 500px); /* Increased height */
+        max-height: clamp(350px, 55vh, 500px); /* Increased height */
+        gap: clamp(20px, 3vw, 40px); /* More spacing between cards */
+    }
+
+    .card {
+        width: clamp(180px, 20vw, 280px); /* Slightly wider cards */
+        height: clamp(280px, 45vh, 420px); /* Taller cards */
+    }
+
+    /* Control panel on the BOTTOM */
+    .control-panel {
+        order: 1; /* After cards */
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        padding: clamp(15px, 2vh, 25px) clamp(20px, 2vw, 40px);
+        margin-top: clamp(15px, 2vh, 25px);
+        gap: clamp(10px, 1.5vh, 15px);
+    }
+
+    /* Show side vents again */
+    .control-panel::before,
+    .control-panel::after {
+        display: block;
+    }
+
+    .spin-button {
+        padding: clamp(20px, 3vh, 35px) clamp(30px, 4vw, 50px); /* Reduced horizontal padding */
+        font-size: clamp(1.6em, 3.5vh, 2.5em);
+        border-width: clamp(4px, 0.8vh, 6px);
+        border-radius: clamp(15px, 2vh, 22px);
+        letter-spacing: clamp(2px, 0.4vh, 4px);
+        writing-mode: horizontal-tb; /* Keep text horizontal */
+        max-width: clamp(250px, 35vw, 400px); /* Limit button width */
+        width: auto; /* Auto width instead of 100% */
+    }
+}
+
+/* Extra small landscape devices (phones in landscape) */
+@media (orientation: landscape) and (max-height: 500px) {
+    .header-logo img {
+        height: clamp(40px, 7vh, 70px); /* Even smaller for very short screens */
+        max-width: min(400px, 45vw);
+    }
+
+    .bottom-controls {
+        gap: clamp(5px, 0.8vw, 8px) !important;
+    }
+
+    .sound-controls {
+        padding: clamp(4px, 0.8vh, 6px) clamp(6px, 1vw, 10px) !important;
+        gap: clamp(4px, 0.8vw, 6px) !important;
+    }
+
+    .volume-slider {
+        width: clamp(50px, 8vw, 70px) !important;
+    }
+
+    .admin-button,
+    .performance-button {
+        width: clamp(30px, 4vh, 38px) !important;
+        height: clamp(30px, 4vh, 38px) !important;
+        font-size: clamp(0.9em, 1.8vh, 1.1em) !important;
+    }
+
+    .prize-showcase {
+        width: clamp(120px, 16vw, 180px);
+        gap: clamp(5px, 0.8vh, 10px);
+    }
+
+    .prize-item {
+        min-height: clamp(80px, 10vh, 110px);
+    }
+
+    .cards-area {
+        min-height: clamp(220px, 38vh, 320px);
+        max-height: clamp(220px, 38vh, 320px);
+        gap: clamp(10px, 1.5vw, 20px);
+    }
+
+    .card {
+        width: clamp(130px, 16vw, 200px);
+        height: clamp(200px, 30vh, 290px);
+    }
+
+    .spin-button {
+        padding: clamp(15px, 2.5vh, 25px) clamp(20px, 2.5vw, 35px);
+        font-size: clamp(1.2em, 2.5vh, 1.8em);
+    }
+
+    .control-panel {
+        width: clamp(130px, 16vw, 180px);
+    }
+
+    body {
+        gap: clamp(3px, 0.5vh, 8px);
+    }
+
+    .sound-controls {
+        flex-direction: column !important;
+        gap: 4px !important;
+    }
+
+    .volume-slider {
+        width: 60px !important;
+    }
+}
