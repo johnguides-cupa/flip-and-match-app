@@ -66,7 +66,7 @@ class AssetPreloader {
         urls.add('./assets/images/Pursuing Potential Logo.png');
         
         // Also add commonly used image paths that might appear in the DOM
-        urls.add('/slot-machine-app/assets/images/Pursuing%20Potential%20Logo.png');
+        urls.add('/flip-and-match-app/assets/images/Pursuing%20Potential%20Logo.png');
         
         return Array.from(urls).filter(url => url && url.trim() !== '');
     }

@@ -52,8 +52,8 @@ class AssetLoader {
             
             img.onerror = () => {
                 // Try fallback path for development mode
-                if (src.startsWith('/slot-machine-app/')) {
-                    const fallbackSrc = src.replace('/slot-machine-app', '');
+                if (src.startsWith('/flip-and-match-app/')) {
+                    const fallbackSrc = src.replace('/flip-and-match-app', '');
                     const fallbackImg = new Image();
                     
                     fallbackImg.onload = () => {

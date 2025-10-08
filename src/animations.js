@@ -124,7 +124,7 @@ class AnimationManager {
         const item = document.createElement('div');
         item.className = 'reel-item';
         item.innerHTML = `
-            <img src="${prize.image}" alt="${prize.name}" onerror="this.src='/assets/images/Sad_cat.png'">
+            <img src="${prize.image}" alt="${prize.name}" onerror="this.onerror=null; this.style.display='none';">
         `;
         // Dynamically set reelHeight if not set
         if (!this.reelHeight) {
@@ -659,7 +659,7 @@ class AnimationManager {
             // Default/consolation prize - show crying cat and play miaw
             if (prizeTitle) prizeTitle.textContent = 'Better luck next time!';
             if (prizeShield) {
-                prizeShield.innerHTML = `<img src="/assets/images/cat-crying.gif" alt="Crying Cat" style="width: 120px; height: 120px; object-fit: contain; border-radius: 12px;" onerror="this.src='/slot-machine-app/assets/images/cat-crying.gif'">`;
+                prizeShield.innerHTML = `<img src="/assets/images/cat-crying.gif" alt="Crying Cat" style="width: 120px; height: 120px; object-fit: contain; border-radius: 12px;" onerror="this.src='/flip-and-match-app/assets/images/cat-crying.gif'">`;
             }
             
             // Play custom miaw sound with slight delay to not interfere with animation
@@ -671,7 +671,7 @@ class AnimationManager {
         } else if (prizeType === 'grandPrize') {
             // Grand prize (lowest win chance) - show dancing cat and play congratulations
             if (prizeShield) {
-                prizeShield.innerHTML = `<img src="/assets/images/dancing-cat.gif" alt="Dancing Cat" style="width: 120px; height: 120px; object-fit: contain; border-radius: 12px;" onerror="this.src='/slot-machine-app/assets/images/dancing-cat.gif'">`;
+                prizeShield.innerHTML = `<img src="/assets/images/dancing-cat.gif" alt="Dancing Cat" style="width: 120px; height: 120px; object-fit: contain; border-radius: 12px;" onerror="this.src='/flip-and-match-app/assets/images/dancing-cat.gif'">`;
             }
             
             // Play custom congratulations sound with slight delay to not interfere with animation
@@ -684,7 +684,7 @@ class AnimationManager {
             // Medium tier prizes - show happy cat gif and play happy sound
             if (prizeTitle) prizeTitle.textContent = 'Congratulations!';
             if (prizeShield) {
-                prizeShield.innerHTML = `<img src="/assets/images/Happy cat.gif" alt="Happy Cat" style="width: 120px; height: 120px; object-fit: contain; border-radius: 12px;" onerror="this.src='/slot-machine-app/assets/images/Happy cat.gif'">`;
+                prizeShield.innerHTML = `<img src="/assets/images/Happy cat.gif" alt="Happy Cat" style="width: 120px; height: 120px; object-fit: contain; border-radius: 12px;" onerror="this.src='/flip-and-match-app/assets/images/Happy cat.gif'">`;
             }
             
             // Play custom happy happy happy sound with slight delay to not interfere with animation

@@ -143,7 +143,7 @@ class SlotMachine {
             }
             
             prizeItem.innerHTML = `
-                <img src="${prize.image}" alt="${prize.name}" onerror="this.src='/assets/images/Sad_cat.png'">
+                <img src="${prize.image}" alt="${prize.name}" onerror="this.onerror=null; this.style.display='none';">
                 <span>${prize.name}</span>
                 ${prize.quantity === 0 ? '<div class="out-of-stock-overlay"><div class="x-mark">X</div></div>' : ''}
             `;

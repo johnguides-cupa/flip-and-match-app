@@ -7,7 +7,7 @@ function isDevelopment() {
 
 // Get the correct asset path for both development and production
 export function getAssetPath(relativePath) {
-    const basePath = isDevelopment() ? '' : '/slot-machine-app';
+    const basePath = isDevelopment() ? '' : '/flip-and-match-app';
     return `${basePath}${relativePath}`;
 }
 

@@ -156,7 +156,7 @@ class AdminPanel {
             prizeCard.className = 'prize-card';
             prizeCard.setAttribute('data-prize-id', prize.id); // Add data attribute for easier targeting
             prizeCard.innerHTML = `
-                <img src="${prize.image}" alt="${prize.name}" onerror="this.src='/assets/images/Sad_cat.png'">
+                <img src="${prize.image}" alt="${prize.name}" onerror="this.onerror=null; this.style.display='none';">
                 <div class="prize-info">
                     <h4>${prize.name}</h4>
                     <p>Quantity: ${prize.quantity}</p>
@@ -623,8 +623,8 @@ class AdminPanel {
             
             // Handle image load error
             previewImage.onerror = () => {
-                previewImage.src = '/assets/images/Sad_cat.png';
-                previewImage.alt = 'Image not found - using default';
+                previewImage.style.display = 'none';
+                previewImage.alt = 'Image not found';
             };
         } else {
             previewImage.style.display = 'none';
@@ -1139,8 +1139,8 @@ class AdminPanel {
             previewText.style.display = 'none';
             
             previewImage.onerror = () => {
-                previewImage.src = '/assets/images/Sad_cat.png';
-                previewImage.alt = 'Image not found - using default';
+                previewImage.style.display = 'none';
+                previewImage.alt = 'Image not found';
             };
         } else {
             previewImage.style.display = 'none';

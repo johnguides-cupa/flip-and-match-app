@@ -104,8 +104,9 @@ class StorageManager {
 
     // Reset all data
     resetAll() {
-        localStorage.removeItem('prizes');
-        localStorage.removeItem('spinLogs');
+        // Clear all localStorage to ensure fresh start
+        localStorage.clear();
+        // Re-initialize with default prizes
         this.initializeDefaults();
     }
 
