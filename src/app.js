@@ -133,15 +133,14 @@ class SlotMachine {
         // Use DocumentFragment for better performance
         const fragment = document.createDocumentFragment();
         
-        prizes.forEach(prize => {
+        // Exclude the default/consolation prize (highest chance) from display
+        const defaultPrize = prizes.reduce((max, p) => p.chance > max.chance ? p : max, prizes[0] || {chance:0});
+        prizes.filter(prize => prize.id !== defaultPrize.id).forEach(prize => {
             const prizeItem = document.createElement('div');
             prizeItem.className = 'prize-item';
-            
-            // Add out-of-stock class if quantity is 0
             if (prize.quantity === 0) {
                 prizeItem.classList.add('out-of-stock');
             }
-            
             prizeItem.innerHTML = `
                 <img src="${prize.image}" alt="${prize.name}" onerror="this.onerror=null; this.style.display='none';">
                 <span>${prize.name}</span>
@@ -169,7 +168,8 @@ class SlotMachine {
     // Performance optimization: Get available prizes with caching
     getAvailablePrizes(prizes) {
         if (!this.cachedAvailablePrizes) {
-            this.cachedAvailablePrizes = prizes.filter(p => p.quantity > 0);
+            // Include prizes with quantity > 0 OR unlimited consolation prizes (even if quantity is 0)
+            this.cachedAvailablePrizes = prizes.filter(p => p.quantity > 0 || p.unlimitedConsolation);
             this.cachedTotalChance = this.cachedAvailablePrizes.reduce((sum, prize) => sum + prize.chance, 0);
         }
         return {
@@ -196,6 +196,9 @@ class SlotMachine {
 
     spin() {
         if (animationManager.isSpinning) return;
+
+        // Clear cache at the start of each spin to ensure fresh prize data
+        this.clearPrizeCache();
 
         const prizes = storageManager.getPrizes();
         if (prizes.length === 0) {
@@ -252,14 +255,12 @@ class SlotMachine {
 
         // Log the spin (always use actualPrize)
         this.logSpin(actualPrize);
-        
-        // Clear cache after winning (quantities may have changed)
-        this.clearPrizeCache();
 
         // Update game info
         //this.updateGameInfo();
 
     // Start the spin animation with slotIcons, show actualPrize in popup
+    // Note: Cache is already cleared in selectPrizeByProbability when prize quantity decreases
     animationManager.spinReels(actualPrize, prizes, slotIcons);
     }
 
@@ -291,19 +292,23 @@ class SlotMachine {
         
         for (const prize of availablePrizes) {
             cumulativeChance += prize.chance;
-            console.log(`  ${prize.name}: ${(cumulativeChance - prize.chance).toFixed(1)} - ${cumulativeChance.toFixed(1)} (${prize.chance}% of ${totalChance}) [Qty: ${prize.quantity}]`);
-            
+            const unlimitedTag = prize.unlimitedConsolation ? ' [UNLIMITED]' : '';
+            console.log(`  ${prize.name}: ${(cumulativeChance - prize.chance).toFixed(1)} - ${cumulativeChance.toFixed(1)} (${prize.chance}% of ${totalChance}) [Qty: ${prize.quantity}]${unlimitedTag}`);
             if (random <= cumulativeChance && !selectedPrize) {
                 selectedPrize = prize;
                 console.log(`✅ Selected: ${prize.name}`);
-                
-                // Reduce quantity when prize is won
-                const updatedPrize = { ...prize, quantity: prize.quantity - 1 };
-                storageManager.updatePrize(updatedPrize);
-                console.log(`📦 ${prize.name} quantity: ${prize.quantity} → ${updatedPrize.quantity}`);
-                
-                if (updatedPrize.quantity === 0) {
-                    console.log(`🚫 ${prize.name} is now exhausted and will be removed from future spins!`);
+                // Only decrease quantity if not unlimitedConsolation
+                if (!prize.unlimitedConsolation) {
+                    const updatedPrize = { ...prize, quantity: prize.quantity - 1 };
+                    storageManager.updatePrize(updatedPrize);
+                    console.log(`📦 ${prize.name} quantity: ${prize.quantity} → ${updatedPrize.quantity}`);
+                    if (updatedPrize.quantity === 0) {
+                        console.log(`🚫 ${prize.name} is now exhausted and will be removed from future spins!`);
+                    }
+                    // Clear cache so next spin recalculates available prizes
+                    this.clearPrizeCache();
+                } else {
+                    console.log(`♾️ ${prize.name} is unlimited - quantity remains at ${prize.quantity}`);
                 }
                 break;
             }
@@ -318,7 +323,7 @@ class SlotMachine {
         return selectedPrize;
     }
 
-    // Updated test function to account for quantity depletion
+    // Updated test function to account for quantity depletion and unlimited consolation
     testProbabilityAccuracy(iterations = 100) {
         console.log(`\n🧪 Testing quantity-based probability system with ${iterations} iterations...`);
         
@@ -334,13 +339,16 @@ class SlotMachine {
         
         console.log('\n📦 Starting quantities:');
         prizes.forEach(prize => {
-            console.log(`  ${prize.name}: ${prize.quantity} (${prize.chance}%)`);
+            const unlimitedTag = prize.unlimitedConsolation ? ' [UNLIMITED ♾️]' : '';
+            console.log(`  ${prize.name}: ${prize.quantity} (${prize.chance}%)${unlimitedTag}`);
         });
         
         // Run test iterations
+        let completedSpins = 0;
         for (let i = 0; i < iterations; i++) {
             const currentPrizes = storageManager.getPrizes();
-            const availablePrizes = currentPrizes.filter(p => p.quantity > 0);
+            // Include unlimited consolation prizes even if quantity is 0
+            const availablePrizes = currentPrizes.filter(p => p.quantity > 0 || p.unlimitedConsolation);
             
             if (availablePrizes.length === 0) {
                 console.log(`\n🏁 All prizes exhausted after ${i} spins!`);
@@ -350,25 +358,37 @@ class SlotMachine {
             const winner = this.selectPrizeByProbability(currentPrizes);
             if (winner) {
                 results[winner.name]++;
+                completedSpins++;
             }
         }
         
         // Calculate and display results
-        console.log('\n📊 Final Results:');
-        console.log('Prize\t\tWins\tOriginal Qty\tRemaining');
-        console.log('─'.repeat(50));
+        console.log('\n📊 Final Results after ' + completedSpins + ' spins:');
+        console.log('Prize\t\t\tWins\tActual %\tExpected %\tOriginal Qty\tRemaining\tStatus');
+        console.log('─'.repeat(95));
         
         const finalPrizes = storageManager.getPrizes();
         Object.keys(results).forEach(prizeName => {
             const finalPrize = finalPrizes.find(p => p.name === prizeName);
             const wins = results[prizeName];
+            const actualPercentage = ((wins / completedSpins) * 100).toFixed(2); // 2 decimals for accuracy
+            const expectedPercentage = finalPrize ? finalPrize.chance.toFixed(2) : '0.00'; // 2 decimals
             const originalQty = originalQuantities[prizeName];
             const remaining = finalPrize ? finalPrize.quantity : 0;
+            const isUnlimited = finalPrize && finalPrize.unlimitedConsolation;
+            const status = isUnlimited ? '♾️ UNLIMITED' : (remaining === 0 ? '❌ EXHAUSTED' : '✅ AVAILABLE');
             
-            console.log(`${prizeName.padEnd(15)}\t${wins}\t${originalQty}\t\t${remaining}`);
+            console.log(`${prizeName.padEnd(20)}\t${wins}\t${actualPercentage}%\t\t${expectedPercentage}%\t\t${originalQty}\t\t${remaining}\t\t${status}`);
         });
         
-        console.log('\n✅ Test completed. Quantities should decrease as prizes are won.');
+        // Show total wins vs iterations
+        const totalWins = Object.values(results).reduce((sum, count) => sum + count, 0);
+        console.log('\n📈 Summary:');
+        console.log(`  Total spins completed: ${completedSpins} / ${iterations}`);
+        console.log(`  Total prizes won: ${totalWins}`);
+        console.log(`  Prizes still available: ${finalPrizes.filter(p => p.quantity > 0 || p.unlimitedConsolation).length}`);
+        
+        console.log('\n✅ Test completed. Quantities decreased as prizes were won (except unlimited).');
         console.log('💡 Reset the game to restore original quantities.');
     }
 

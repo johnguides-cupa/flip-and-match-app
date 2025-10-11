@@ -172,25 +172,28 @@ class AnimationManager {
         
         this.shuffleTimeline = gsap.timeline({ repeat: -1 });
         
-        // Shuffle animation: swap card positions randomly
-        const shuffleSequence = () => {
-            // Random delay between shuffles (1-3 seconds)
-            const delay = 1 + Math.random() * 2;
+        // Swap duration based on performance mode
+        const swapDuration = this.performanceMode === 'performance' ? 0.3 : 0.4;
+        
+        // Create shuffle timeline with sequential swaps (no overlapping)
+        let cumulativeTime = 0;
+        for (let i = 0; i < 50; i++) { // 50 shuffles in the loop
+            // Random delay between shuffles (0.3-1 seconds)
+            const delayBetween = 0.3 + Math.random() * 0.7;
             
             // Random pair to swap (0-1, 1-2, or 0-2)
-            const swapPairs = [[0, 1], [1, 2], [0, 2], [0, 1]];
+            const swapPairs = [[0, 1], [1, 2], [0, 2]];
             const [pos1, pos2] = swapPairs[Math.floor(Math.random() * swapPairs.length)];
             
-            return { delay, pos1, pos2 };
-        };
-        
-        // Create shuffle timeline
-        for (let i = 0; i < 50; i++) { // 50 shuffles in the loop
-            const { delay, pos1, pos2 } = shuffleSequence();
+            // Schedule swap at specific time (delay + previous swap duration)
+            cumulativeTime += delayBetween;
             
             this.shuffleTimeline.call(() => {
                 this.swapCardPositions(pos1, pos2);
-            }, [], `+=${delay}`);
+            }, [], cumulativeTime);
+            
+            // Add swap duration to cumulative time so next swap starts after this one finishes
+            cumulativeTime += swapDuration;
         }
     }
 
@@ -212,7 +215,7 @@ class AnimationManager {
             2: 'calc(50% + 160px)'
         };
         
-        const duration = this.performanceMode === 'performance' ? 0.6 : 0.8;
+        const duration = this.performanceMode === 'performance' ? 0.3 : 0.4; // Faster swap animation
         
         // Get current computed left values
         const card1Left = card1.getBoundingClientRect().left - cardsArea.getBoundingClientRect().left;
@@ -636,18 +639,28 @@ class AnimationManager {
         const allPrizes = window.storageManager ? window.storageManager.getPrizes() : [];
         const prizeType = this.determinePrizeType(prize, allPrizes);
 
-        // Pre-load image to prevent lag during animation
-        const img = new Image();
-        img.onload = () => {
-            prizeImage.src = prize.image;
-        };
-        img.src = prize.image;
-
-        // Set prize name text - add "You won" prefix for non-consolation prizes
+        // For consolation prize, remove prize image and show only large sad crying cat
         if (prizeType === 'consolation') {
-            prizeName.textContent = prize.name; // Keep original name for consolation
+            prizeImage.style.display = 'none';
+            prizeName.textContent = prize.name;
+            if (prizeTitle) prizeTitle.textContent = 'Better luck next time!';
+            if (prizeShield) {
+                prizeShield.style.width = '';
+                prizeShield.style.height = '';
+                prizeShield.style.display = '';
+                prizeShield.style.justifyContent = '';
+                prizeShield.style.alignItems = '';
+                prizeShield.innerHTML = `<img src="/assets/images/cat-crying.gif" alt="Crying Cat" style="width: 120px; height: 120px; object-fit: contain; border-radius: 12px;" onerror="this.src='/flip-and-match-app/assets/images/cat-crying.gif'">`;
+            }
         } else {
-            prizeName.textContent = `You won ${prize.name}!`; // Add "You won" for winning prizes
+            // Pre-load image to prevent lag during animation
+            prizeImage.style.display = '';
+            const img = new Image();
+            img.onload = () => {
+                prizeImage.src = prize.image;
+            };
+            img.src = prize.image;
+            prizeName.textContent = `You won ${prize.name}!`;
         }
 
         // Force hardware acceleration before animation (moved up for both types)

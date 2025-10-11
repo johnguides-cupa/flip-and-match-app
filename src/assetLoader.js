@@ -134,34 +134,41 @@ class AssetLoader {
     // Load all game assets
     async loadAllAssets() {
         if (this.isLoading) return;
-        
         this.isLoading = true;
         this.loadedAssets = 0;
         this.failedAssets = 0;
 
-        // Get all prize images from storage
-        const prizes = JSON.parse(localStorage.getItem('slotPrizes') || '[]');
-        const prizeImages = prizes.map(prize => prize.image).filter(img => img && !img.startsWith('http'));
+        // Import asset manifests
+        // These should be imported at the top of the file:
+        // import { PRIZE_ASSETS, APP_IMAGES } from './assets/assets.js';
+        // If you have a sound manifest, import it too
+        const prizeImages = (typeof PRIZE_ASSETS !== 'undefined')
+            ? PRIZE_ASSETS.map(prize => prize.path)
+            : [];
+        const appImages = (typeof APP_IMAGES !== 'undefined')
+            ? Object.values(APP_IMAGES).map(img => img.path)
+            : [];
 
-        // Define all assets to load - try development paths first
-        const assets = {
-            images: [
-                '/assets/images/Sad_cat.png',
-                '/assets/images/cat_win.png',
-                '/assets/images/Pursuing Potential Logo.png',
-                ...prizeImages
-            ],
-            sounds: [
-                '/assets/sounds/Congratulations.mp3',
-                '/assets/sounds/miaw.mp3'
-            ]
-        };
+        // Add any other static images you want to preload
+        const staticImages = [
+            // Add more if needed
+        ];
+
+        // Sound assets
+        const soundAssets = [
+            // If you have a sound manifest, use it here
+            '/assets/sounds/Congratulations.mp3',
+            '/assets/sounds/miaw.mp3',
+            '/assets/sounds/Happy Happy Happy.mp3'
+        ];
+
+        // Combine all images
+        const allImages = [...new Set([...prizeImages, ...appImages, ...staticImages])];
 
         // Count total assets
-        this.totalAssets = assets.images.length + assets.sounds.length;
+        this.totalAssets = allImages.length + soundAssets.length;
 
         if (this.totalAssets === 0) {
-            // No assets to load
             this.completionCallbacks.forEach(callback => callback(true, 0));
             return;
         }
@@ -170,18 +177,18 @@ class AssetLoader {
         this.updateProgress();
 
         // Load all images
-        const imagePromises = assets.images.map(src => 
+        const imagePromises = allImages.map(src =>
             this.loadImage(src).catch(error => {
                 console.warn('Image load failed but continuing:', error);
-                return null; // Don't break the loading process
+                return null;
             })
         );
 
         // Load all sounds
-        const soundPromises = assets.sounds.map(src => 
+        const soundPromises = soundAssets.map(src =>
             this.loadAudio(src).catch(error => {
                 console.warn('Sound load failed but continuing:', error);
-                return null; // Don't break the loading process
+                return null;
             })
         );
 

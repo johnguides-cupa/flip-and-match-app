@@ -197,6 +197,101 @@ class AdminPanel {
         ensureLabel('prizeQuantity', 'Quantity');
         ensureLabel('prizeChance', 'Win Chance (%)');
 
+        // Create unlimited checkbox container after quantity input
+        const quantityInput = document.getElementById('prizeQuantity');
+        let checkboxContainer = document.getElementById('unlimited-checkbox-container');
+        if (!checkboxContainer) {
+            checkboxContainer = document.createElement('div');
+            checkboxContainer.id = 'unlimited-checkbox-container';
+            checkboxContainer.style.display = 'block';
+            checkboxContainer.style.marginTop = '12px';
+            checkboxContainer.style.marginBottom = '12px';
+            checkboxContainer.style.padding = '10px';
+            checkboxContainer.style.backgroundColor = '#fff3cd';
+            checkboxContainer.style.borderRadius = '4px';
+            checkboxContainer.style.border = '1px solid #ffc107';
+            
+            // Insert container after quantity input (not inside its parent)
+            if (quantityInput.nextSibling) {
+                quantityInput.parentNode.insertBefore(checkboxContainer, quantityInput.nextSibling);
+            } else {
+                quantityInput.parentNode.appendChild(checkboxContainer);
+            }
+            
+            const checkboxWrapper = document.createElement('div');
+            checkboxWrapper.style.display = 'flex';
+            checkboxWrapper.style.alignItems = 'center';
+            checkboxWrapper.style.marginBottom = '4px';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = 'unlimitedConsolation';
+            checkbox.style.marginRight = '8px';
+            checkbox.style.width = '18px';
+            checkbox.style.height = '18px';
+            checkbox.style.cursor = 'pointer';
+            checkbox.style.flexShrink = '0';
+            
+            const label = document.createElement('label');
+            label.id = 'unlimitedConsolation-label';
+            label.htmlFor = 'unlimitedConsolation';
+            label.textContent = 'Unlimited consolation (quantity never decreases)';
+            label.style.cursor = 'pointer';
+            label.style.userSelect = 'none';
+            label.style.margin = '0';
+            label.style.fontWeight = 'bold';
+            label.style.color = '#000';  // Black text for visibility
+            
+            checkboxWrapper.appendChild(checkbox);
+            checkboxWrapper.appendChild(label);
+            
+            const hint = document.createElement('div');
+            hint.id = 'unlimited-hint';
+            hint.style.fontSize = '12px';
+            hint.style.color = '#856404';
+            hint.style.marginTop = '4px';
+            hint.textContent = 'Note: Only applies to the prize with the highest win chance (consolation prize)';
+            
+            checkboxContainer.appendChild(checkboxWrapper);
+            checkboxContainer.appendChild(hint);
+        }
+        
+        // Always show the checkbox, but enable/disable based on whether this is the highest chance prize
+        const prizes = storageManager().getPrizes();
+        let isHighestChance = false;
+        
+        if (prize) {
+            // When editing, check if this prize has the highest chance
+            const sortedPrizes = [...prizes].sort((a, b) => b.chance - a.chance);
+            isHighestChance = sortedPrizes.length > 0 && sortedPrizes[0].id === prize.id;
+            console.log('Editing prize:', prize.name, 'Is highest chance:', isHighestChance, 'Chance:', prize.chance);
+        } else {
+            // When adding new prize, check if it would be highest after save
+            isHighestChance = false;
+            console.log('Adding new prize, checkbox disabled by default');
+        }
+        
+        // Enable/disable checkbox based on highest chance status
+        const checkbox = document.getElementById('unlimitedConsolation');
+        const hint = document.getElementById('unlimited-hint');
+        if (checkbox) {
+            checkbox.disabled = !isHighestChance;
+            if (isHighestChance) {
+                hint.textContent = '✓ This is the consolation prize (highest win chance)';
+                hint.style.color = '#155724';
+                checkboxContainer.style.backgroundColor = '#d4edda';
+                checkboxContainer.style.borderColor = '#28a745';
+            } else {
+                hint.textContent = 'ⓘ This option only applies to the prize with the highest win chance';
+                hint.style.color = '#856404';
+                checkboxContainer.style.backgroundColor = '#fff3cd';
+                checkboxContainer.style.borderColor = '#ffc107';
+            }
+        }
+        
+        // Always show the container
+        checkboxContainer.style.display = 'block';
+
         // Add win chance slider styles if not already added
         addWinChanceSliderStyles();
 
@@ -247,6 +342,12 @@ class AdminPanel {
             document.getElementById('prizeQuantity').value = prize.quantity;
             document.getElementById('prizeChance').value = prize.chance;
             
+            // Set unlimited checkbox state
+            const unlimitedCheckbox = document.getElementById('unlimitedConsolation');
+            if (unlimitedCheckbox) {
+                unlimitedCheckbox.checked = !!prize.unlimitedConsolation;
+            }
+            
             // Set image source selector based on current image
             this.updateImageSourceSelector(prize.image);
         } else {
@@ -257,6 +358,12 @@ class AdminPanel {
             document.getElementById('prizeImage').value = '';
             document.getElementById('prizeQuantity').value = '';
             document.getElementById('prizeChance').value = '';
+            
+            // Reset unlimited checkbox
+            const unlimitedCheckbox = document.getElementById('unlimitedConsolation');
+            if (unlimitedCheckbox) {
+                unlimitedCheckbox.checked = false;
+            }
             
             // Reset image source selector
             this.updateImageSourceSelector('');
@@ -486,24 +593,20 @@ class AdminPanel {
         assetGallery.id = 'assetGallery';
         assetGallery.className = 'asset-gallery hidden';
         
-        PRIZE_ASSETS.forEach(asset => {
+        PRIZE_ASSETS.filter(asset => asset.path && asset.path.includes('/prizes/')).forEach(asset => {
             const assetItem = document.createElement('div');
             assetItem.className = 'asset-item';
             assetItem.dataset.assetId = asset.id;
             assetItem.dataset.assetPath = asset.path;
-            
             // Use getAssetUrl for proper path resolution
             const imageUrl = getAssetUrl(asset.filename);
-            
             assetItem.innerHTML = `
-                <img src="${imageUrl}" alt="${asset.name}" title="${asset.description}">
+                <img src="${imageUrl}" alt="${asset.name}" title="${asset.description}" onerror="this.style.display='none';">
                 <span>${asset.name}</span>
             `;
-            
             assetItem.addEventListener('click', () => {
                 this.selectAsset(asset);
             });
-            
             assetGallery.appendChild(assetItem);
         });
 
@@ -638,6 +741,7 @@ class AdminPanel {
         const image = document.getElementById('prizeImage').value.trim();
         const quantity = parseInt(document.getElementById('prizeQuantity').value);
         const chance = parseFloat(document.getElementById('prizeChance').value);
+        const unlimitedConsolation = document.getElementById('unlimitedConsolation')?.checked || false;
 
         let msg = document.getElementById('chanceMessage');
         if (!name || !image || quantity < 0 || chance < 0 || chance > 100) {
@@ -722,7 +826,8 @@ class AdminPanel {
             name,
             image,
             quantity,
-            chance
+            chance,
+            unlimitedConsolation
         };
 
         if (this.currentEditingPrize) {
@@ -886,6 +991,16 @@ class AdminPanel {
                     <button type="button" class="quantity-btn plus-btn" data-target="inline-prizeQuantity-${prizeId}">+</button>
                 </div>
                 
+                <div id="inline-unlimited-checkbox-container-${prizeId}" style="display: block; margin-top: 12px; margin-bottom: 12px; padding: 10px; background-color: #fff3cd; border-radius: 4px; border: 1px solid #ffc107;">
+                    <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                        <input type="checkbox" id="inline-unlimitedConsolation-${prizeId}" style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer; flex-shrink: 0;">
+                        <label for="inline-unlimitedConsolation-${prizeId}" style="cursor: pointer; user-select: none; margin: 0; font-weight: bold; color: #000;">Unlimited consolation (quantity never decreases)</label>
+                    </div>
+                    <div id="inline-unlimited-hint-${prizeId}" style="font-size: 12px; color: #856404; margin-top: 4px;">
+                        ⓘ This option only applies to the prize with the highest win chance
+                    </div>
+                </div>
+                
                 <label for="inline-prizeChance-${prizeId}">Win Chance (%)</label>
                 <input type="number" id="inline-prizeChance-${prizeId}" value="${prize.chance}" placeholder="Win Chance %" min="0" max="100" step="0.1">
                 
@@ -981,6 +1096,36 @@ class AdminPanel {
 
         // Set initial state based on current image
         this.updateInlineImageSourceState(prizeId, currentImage);
+        
+        // Set up unlimited checkbox state and enable/disable
+        const prizes = storageManager().getPrizes();
+        const sortedPrizes = [...prizes].sort((a, b) => b.chance - a.chance);
+        const isHighestChance = sortedPrizes.length > 0 && sortedPrizes[0].id === prizeId;
+        
+        const unlimitedCheckbox = document.getElementById(`inline-unlimitedConsolation-${prizeId}`);
+        const unlimitedHint = document.getElementById(`inline-unlimited-hint-${prizeId}`);
+        const unlimitedContainer = document.getElementById(`inline-unlimited-checkbox-container-${prizeId}`);
+        
+        if (unlimitedCheckbox && unlimitedHint && unlimitedContainer) {
+            // Set checkbox checked state from prize data
+            const currentPrize = prizes.find(p => p.id === prizeId);
+            unlimitedCheckbox.checked = !!(currentPrize && currentPrize.unlimitedConsolation);
+            
+            // Enable/disable based on highest chance status
+            unlimitedCheckbox.disabled = !isHighestChance;
+            
+            if (isHighestChance) {
+                unlimitedHint.textContent = '✓ This is the consolation prize (highest win chance)';
+                unlimitedHint.style.color = '#155724';
+                unlimitedContainer.style.backgroundColor = '#d4edda';
+                unlimitedContainer.style.borderColor = '#28a745';
+            } else {
+                unlimitedHint.textContent = 'ⓘ This option only applies to the prize with the highest win chance';
+                unlimitedHint.style.color = '#856404';
+                unlimitedContainer.style.backgroundColor = '#fff3cd';
+                unlimitedContainer.style.borderColor = '#ffc107';
+            }
+        }
         
         // Add chance input listener for real-time updates
         const chanceInput = document.getElementById(`inline-prizeChance-${prizeId}`);
@@ -1182,6 +1327,7 @@ class AdminPanel {
         const prizeImage = document.getElementById(`inline-prizeImage-${prizeId}`).value.trim();
         const prizeQuantity = parseInt(document.getElementById(`inline-prizeQuantity-${prizeId}`).value);
         const prizeChance = parseFloat(document.getElementById(`inline-prizeChance-${prizeId}`).value);
+        const unlimitedConsolation = document.getElementById(`inline-unlimitedConsolation-${prizeId}`)?.checked || false;
 
         // Validation
         if (!prizeName) {
@@ -1205,7 +1351,8 @@ class AdminPanel {
             name: prizeName,
             image: prizeImage,
             quantity: prizeQuantity,
-            chance: prizeChance
+            chance: prizeChance,
+            unlimitedConsolation
         };
 
         // Calculate total chance and auto-adjust to 100%

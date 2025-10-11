@@ -4,13 +4,6 @@ const BASE_URL = import.meta.env.BASE_URL || '/';
 // Assets manifest for prize images
 export const PRIZE_ASSETS = [
   {
-    id: 'cambridge-shield',
-    name: 'Cambridge Shield',
-    filename: 'Cambridge Shield.png',
-    path: `${BASE_URL}assets/images/prizes/Cambridge Shield.png`,
-    description: 'Cambridge Shield logo'
-  },
-  {
     id: 'development-evp-shield',
     name: 'Development EVP Shield',
     filename: 'Development-EVP-shield.png',
@@ -30,13 +23,6 @@ export const PRIZE_ASSETS = [
     filename: 'Innovation-EVP-shield.png',
     path: `${BASE_URL}assets/images/prizes/Innovation-EVP-shield.png`,
     description: 'Innovation EVP shield logo'
-  },
-  {
-    id: 'pursuing-potential-logo',
-    name: 'Pursuing Potential Logo',
-    filename: 'Pursuing Potential Logo.png',
-    path: `${BASE_URL}assets/images/prizes/Pursuing Potential Logo.png`,
-    description: 'Pursuing Potential brand logo'
   }
 ];
 
@@ -62,14 +48,39 @@ export const APP_IMAGES = {
     filename: 'Pursuing Potential Logo.png',
     path: `${BASE_URL}assets/images/Pursuing Potential Logo.png`,
     description: 'Main header logo'
+  },
+  catCrying: {
+    id: 'cat-crying',
+    name: 'Crying Cat',
+    filename: 'cat-crying.gif',
+    path: `${BASE_URL}assets/images/cat-crying.gif`,
+    description: 'Crying cat gif'
+  },
+  dancingCat: {
+    id: 'dancing-cat',
+    name: 'Dancing Cat',
+    filename: 'dancing-cat.gif',
+    path: `${BASE_URL}assets/images/dancing-cat.gif`,
+    description: 'Dancing cat gif'
+  },
+  happyCat: {
+    id: 'happy-cat',
+    name: 'Happy Cat',
+    filename: 'Happy cat.gif',
+    path: `${BASE_URL}assets/images/Happy cat.gif`,
+    description: 'Happy cat gif'
   }
 };
 
 // Helper function to get asset URL for Vite
+export const SOUND_ASSETS = [
+  `${BASE_URL}assets/sounds/Congratulations.mp3`,
+  `${BASE_URL}assets/sounds/miaw.mp3`,
+  `${BASE_URL}assets/sounds/Happy Happy Happy.mp3`
+];
+
 export const getAssetUrl = (filename) => {
   // URL encode the filename to handle spaces
   const encodedFilename = encodeURIComponent(filename);
-  
-  // Use BASE_URL from Vite - automatically '/' in dev, '/flip-and-match-app/' in production
   return `${BASE_URL}assets/images/prizes/${encodedFilename}`;
 };

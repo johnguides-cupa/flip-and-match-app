@@ -1,5 +1,5 @@
 // Storage manager for the slot machine app
-import { PRIZE_ASSETS } from './assets/assets.js';
+import { PRIZE_ASSETS, APP_IMAGES } from './assets/assets.js';
 
 class StorageManager {
     constructor() {
@@ -12,30 +12,30 @@ class StorageManager {
             const defaultPrizes = [
                 {
                     id: 1,
-                    name: "Grand Prize", // Cambridge Shield
+                    name: "Grand Prize", // Development EVP Shield
                     image: PRIZE_ASSETS[0].path,
                     quantity: 50,
                     chance: 1
                 },
                 {
                     id: 2,
-                    name: "2nd Prize", // Development EVP Shield
+                    name: "2nd Prize", // Inclusion EVP Shield
                     image: PRIZE_ASSETS[1].path,
                     quantity: 10,
                     chance: 2
                 },
                 {
                     id: 3,
-                    name: "3rd Prize", // Inclusion EVP Shield
+                    name: "3rd Prize", // Innovation EVP Shield
                     image: PRIZE_ASSETS[2].path,
                     quantity: 5,
                     chance: 3
                 },
-                 {
+                {
                     id: 4,
-                    name: "Consolation", // Inclusion EVP Shield
-                    image: PRIZE_ASSETS[4].path,
-                    quantity: 5,
+                    name: "Consolation", // Sad Cat PNG from APP_IMAGES
+                    image: APP_IMAGES.sadCat.path,
+                    quantity: 999,
                     chance: 94
                 }
             ];
