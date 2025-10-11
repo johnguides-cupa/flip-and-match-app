@@ -6,6 +6,7 @@ import './sounds.js';
 import './animations.js';
 import './admin.js';
 import './app.js';
+import './expandButton.js';
 // Import performance system components
 import { performanceManager } from './performanceManager.js';
 import { modeSelectionModal } from './modeSelectionModal.js';
