@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Probability Debug Tool</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #00ff00;
+        }
+        button {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #0052a3;
+        }
+        #output {
+            white-space: pre-wrap;
+            background: #0a0a0a;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #0a0a0a;
+            border-radius: 5px;
+        }
+        input {
+            background: #333;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Probability System Debug Tool</h1>
+    
+    <div class="section">
+        <h3>Current Prize Configuration:</h3>
+        <div id="prizeConfig"></div>
+    </div>
+
+    <div class="section">
+        <h3>Test Controls:</h3>
+        <label>Test Iterations: <input type="number" id="iterations" value="1000" min="100" max="100000"></label>
+        <br><br>
+        <button onclick="runDetailedTest()">🎲 Run Detailed Probability Test</button>
+        <button onclick="testSingleSpin()">🎯 Test Single Spin (with logs)</button>
+        <button onclick="checkPrizeSetup()">🔧 Check Prize Setup</button>
+        <button onclick="clearStorage()">🗑️ Reset All Data</button>
+    </div>
+
+    <div id="output"></div>
+
+    <script>
+        // Load storage manager from parent window if available
+        const storageKey = 'slot_machine_prizes';
+        
+        function getPrizes() {
+            const saved = localStorage.getItem(storageKey);
+            if (saved) {
+                return JSON.parse(saved);
+            }
+            // Default prizes
+            return [
+                { id: 1, name: 'Grand Prize', chance: 1, quantity: 1, imageUrl: '', unlimitedConsolation: false },
+                { id: 2, name: '2nd Prize', chance: 2, quantity: 5, imageUrl: '', unlimitedConsolation: false },
+                { id: 3, name: '3rd Prize', chance: 3, quantity: 10, imageUrl: '', unlimitedConsolation: false },
+                { id: 4, name: 'Consolation Prize', chance: 94, quantity: 999, imageUrl: '', unlimitedConsolation: true }
+            ];
+        }
+
+        function savePrizes(prizes) {
+            localStorage.setItem(storageKey, JSON.stringify(prizes));
+        }
+
+        function checkPrizeSetup() {
+            const prizes = getPrizes();
+            let output = '📋 CURRENT PRIZE CONFIGURATION:\n';
+            output += '═'.repeat(100) + '\n\n';
+            
+            let totalChance = 0;
+            let issues = [];
+            
+            prizes.forEach((prize, idx) => {
+                output += `Prize ${idx + 1}: ${prize.name}\n`;
+                output += `  • Chance: ${prize.chance}%\n`;
+                output += `  • Quantity: ${prize.quantity}\n`;
+                output += `  • Unlimited: ${prize.unlimitedConsolation ? 'YES ♾️' : 'NO'}\n`;
+                output += `  • ID: ${prize.id}\n`;
+                
+                // Check for issues
+                if (prize.unlimitedConsolation && prize.quantity === 0) {
+                    issues.push(`⚠️ ${prize.name} is unlimited but has quantity=0. This might cause issues.`);
+                }
+                if (prize.chance <= 0) {
+                    issues.push(`⚠️ ${prize.name} has chance=${prize.chance}. Should be > 0.`);
+                }
+                
+                totalChance += prize.chance;
+                output += '\n';
+            });
+            
+            output += '═'.repeat(100) + '\n';
+            output += `TOTAL CHANCE: ${totalChance}% (should be 100%)\n\n`;
+            
+            if (totalChance !== 100) {
+                issues.push(`⚠️ Total chance is ${totalChance}%, not 100%. This will affect probability distribution.`);
+            }
+            
+            if (issues.length > 0) {
+                output += '\n🚨 ISSUES DETECTED:\n';
+                issues.forEach(issue => {
+                    output += issue + '\n';
+                });
+            } else {
+                output += '\n✅ No configuration issues detected.\n';
+            }
+            
+            document.getElementById('output').textContent = output;
+            displayPrizeConfig();
+        }
+
+        function displayPrizeConfig() {
+            const prizes = getPrizes();
+            let html = '<table style="color: #00ff00; border-collapse: collapse;">';
+            html += '<tr><th>Prize</th><th>Chance %</th><th>Quantity</th><th>Unlimited</th></tr>';
+            prizes.forEach(prize => {
+                html += `<tr>`;
+                html += `<td style="padding: 5px;">${prize.name}</td>`;
+                html += `<td style="padding: 5px;">${prize.chance}%</td>`;
+                html += `<td style="padding: 5px;">${prize.quantity}</td>`;
+                html += `<td style="padding: 5px;">${prize.unlimitedConsolation ? '♾️ YES' : 'NO'}</td>`;
+                html += `</tr>`;
+            });
+            html += '</table>';
+            document.getElementById('prizeConfig').innerHTML = html;
+        }
+
+        function testSingleSpin() {
+            const prizes = getPrizes();
+            const availablePrizes = prizes.filter(p => p.quantity > 0 || p.unlimitedConsolation);
+            
+            let output = '🎯 SINGLE SPIN TEST:\n';
+            output += '═'.repeat(100) + '\n\n';
+            
+            if (availablePrizes.length === 0) {
+                output += '❌ No prizes available!\n';
+                document.getElementById('output').textContent = output;
+                return;
+            }
+            
+            const totalChance = availablePrizes.reduce((sum, p) => sum + p.chance, 0);
+            const random = Math.random() * totalChance;
+            
+            output += `Available prizes: ${availablePrizes.length}\n`;
+            output += `Total chance pool: ${totalChance}\n`;
+            output += `Random number generated: ${random.toFixed(6)}\n\n`;
+            output += 'Prize Ranges:\n';
+            output += '─'.repeat(100) + '\n';
+            
+            let cumulativeChance = 0;
+            let selectedPrize = null;
+            
+            availablePrizes.forEach(prize => {
+                const rangeStart = cumulativeChance;
+                cumulativeChance += prize.chance;
+                const rangeEnd = cumulativeChance;
+                const actualPercent = ((prize.chance / totalChance) * 100).toFixed(2);
+                const isSelected = (random > rangeStart && random <= rangeEnd);
+                
+                output += `${prize.name.padEnd(25)} | Range: ${rangeStart.toFixed(2).padStart(8)} - ${rangeEnd.toFixed(2).padStart(8)} | `;
+                output += `Chance: ${prize.chance.toString().padStart(3)}% of ${totalChance} = ${actualPercent}% actual`;
+                
+                if (isSelected) {
+                    output += ' ← 🎯 SELECTED!\n';
+                    selectedPrize = prize;
+                } else {
+                    output += '\n';
+                }
+            });
+            
+            output += '─'.repeat(100) + '\n\n';
+            output += `✅ Winner: ${selectedPrize ? selectedPrize.name : 'None (ERROR!)'}\n`;
+            output += `   Random ${random.toFixed(6)} fell in range ${selectedPrize ? (cumulativeChance - selectedPrize.chance).toFixed(2) + ' - ' + cumulativeChance.toFixed(2) : 'N/A'}\n`;
+            
+            document.getElementById('output').textContent = output;
+        }
+
+        function runDetailedTest() {
+            const iterations = parseInt(document.getElementById('iterations').value) || 1000;
+            const prizes = JSON.parse(JSON.stringify(getPrizes())); // Deep copy
+            
+            let output = `🎲 RUNNING ${iterations} TEST SPINS:\n`;
+            output += '═'.repeat(100) + '\n\n';
+            document.getElementById('output').textContent = output + '⏳ Running test... Please wait...\n';
+            
+            setTimeout(() => {
+                const results = {};
+                const randomHistory = [];
+                const prizeSnapshot = JSON.parse(JSON.stringify(prizes));
+                
+                prizes.forEach(prize => {
+                    results[prize.name] = { wins: 0, ranges: [] };
+                });
+                
+                let completedSpins = 0;
+                
+                for (let i = 0; i < iterations; i++) {
+                    const availablePrizes = prizes.filter(p => p.quantity > 0 || p.unlimitedConsolation);
+                    
+                    if (availablePrizes.length === 0) break;
+                    
+                    const totalChance = availablePrizes.reduce((sum, p) => sum + p.chance, 0);
+                    const random = Math.random() * totalChance;
+                    randomHistory.push(random);
+                    
+                    let cumulativeChance = 0;
+                    
+                    for (const prize of availablePrizes) {
+                        const rangeStart = cumulativeChance;
+                        cumulativeChance += prize.chance;
+                        
+                        if (random <= cumulativeChance) {
+                            results[prize.name].wins++;
+                            results[prize.name].ranges.push({ random, rangeStart, rangeEnd: cumulativeChance });
+                            
+                            if (!prize.unlimitedConsolation) {
+                                prize.quantity--;
+                            }
+                            break;
+                        }
+                    }
+                    completedSpins++;
+                }
+                
+                // Build results
+                let output = `📊 TEST RESULTS (${completedSpins} spins completed):\n`;
+                output += '═'.repeat(120) + '\n\n';
+                
+                // Table
+                output += `${'Prize'.padEnd(25)} ${'Wins'.padStart(10)} ${'Actual %'.padStart(12)} ${'Expected %'.padStart(14)} ${'Variance'.padStart(12)}\n`;
+                output += '─'.repeat(120) + '\n';
+                
+                prizeSnapshot.sort((a, b) => a.chance - b.chance).forEach(prize => {
+                    const wins = results[prize.name].wins;
+                    const actualPercent = (wins / completedSpins * 100).toFixed(2);
+                    const expectedPercent = prize.chance.toFixed(2);
+                    const variance = (actualPercent - expectedPercent).toFixed(2);
+                    const varianceIndicator = Math.abs(variance) > 1 ? ' ⚠️' : '';
+                    
+                    output += `${prize.name.padEnd(25)} `;
+                    output += `${wins.toString().padStart(10)} `;
+                    output += `${(actualPercent + '%').padStart(12)} `;
+                    output += `${(expectedPercent + '%').padStart(14)} `;
+                    output += `${(variance > 0 ? '+' : '') + variance + '%'.padStart(12)}${varianceIndicator}\n`;
+                });
+                
+                output += '─'.repeat(120) + '\n\n';
+                
+                // Random number statistics
+                const minRandom = Math.min(...randomHistory);
+                const maxRandom = Math.max(...randomHistory);
+                const avgRandom = randomHistory.reduce((sum, val) => sum + val, 0) / randomHistory.length;
+                const totalChance = prizeSnapshot.reduce((sum, p) => sum + p.chance, 0);
+                
+                output += '🎲 RANDOM NUMBER DISTRIBUTION:\n';
+                output += `   • Minimum: ${minRandom.toFixed(6)}\n`;
+                output += `   • Maximum: ${maxRandom.toFixed(6)}\n`;
+                output += `   • Average: ${avgRandom.toFixed(6)} (expected: ${(totalChance / 2).toFixed(6)})\n`;
+                output += `   • Total Chance Pool: ${totalChance}\n\n`;
+                
+                if (maxRandom > totalChance) {
+                    output += `⚠️ WARNING: Max random (${maxRandom.toFixed(6)}) exceeded total chance (${totalChance})!\n`;
+                    output += `   This indicates a BUG in the probability system.\n\n`;
+                }
+                
+                // Check for suspicious patterns
+                output += '🔍 ANALYSIS:\n';
+                prizeSnapshot.forEach(prize => {
+                    const wins = results[prize.name].wins;
+                    const actualPercent = (wins / completedSpins * 100);
+                    const expectedPercent = prize.chance;
+                    const variance = Math.abs(actualPercent - expectedPercent);
+                    
+                    if (variance > 2 && completedSpins >= 1000) {
+                        output += `   ⚠️ ${prize.name}: Variance of ${variance.toFixed(2)}% (actual: ${actualPercent.toFixed(2)}%, expected: ${expectedPercent.toFixed(2)}%)\n`;
+                        output += `      This might indicate an issue if pattern persists across multiple tests.\n`;
+                    }
+                });
+                
+                output += '\n✅ Test complete. Run multiple times and compare results to verify consistency.\n';
+                
+                document.getElementById('output').textContent = output;
+            }, 100);
+        }
+
+        function clearStorage() {
+            if (confirm('This will reset ALL prize data to defaults. Continue?')) {
+                localStorage.removeItem(storageKey);
+                localStorage.removeItem('slot_machine_logs');
+                alert('Storage cleared! Refresh the page.');
+                checkPrizeSetup();
+            }
+        }
+
+        // Initialize
+        checkPrizeSetup();
+    </script>
+</body>
+</html>

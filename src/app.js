@@ -207,11 +207,14 @@ class SlotMachine {
         }
 
         // Determine winning prize based on game mode
-        const winningPrize = this.determineWinningPrize(prizes);
+        const { prize: winningPrize, randomValue } = this.determineWinningPrize(prizes);
         if (!winningPrize) {
             alert('No more prizes available!');
             return;
         }
+        
+        // Store random value for logging
+        this.lastRandomValue = randomValue;
 
         // Suspenseful slot icon logic for default prize
         let slotIcons = [];
@@ -274,41 +277,48 @@ class SlotMachine {
         
         if (availablePrizes.length === 0) {
             console.log('❌ No prizes available - all quantities exhausted!');
-            return null;
+            return { prize: null, randomValue: 0 };
         }
 
         if (totalChance === 0) {
             // If no chances set, select randomly from available
-            return availablePrizes[Math.floor(Math.random() * availablePrizes.length)];
+            return { 
+                prize: availablePrizes[Math.floor(Math.random() * availablePrizes.length)],
+                randomValue: 0
+            };
         }
 
         // Generate random number between 0 and totalChance (cached)
         let random = Math.random() * totalChance;
         console.log('🎲 Spin - Available prizes:', availablePrizes.length, 'Total chance:', totalChance);
         console.log('   Random value:', random.toFixed(3));
+        console.log('   📋 Prize pool breakdown:');
 
         let selectedPrize = null;
         let cumulativeChance = 0;
         
         for (const prize of availablePrizes) {
+            const rangeStart = cumulativeChance;
             cumulativeChance += prize.chance;
+            const rangeEnd = cumulativeChance;
             const unlimitedTag = prize.unlimitedConsolation ? ' [UNLIMITED]' : '';
-            console.log(`  ${prize.name}: ${(cumulativeChance - prize.chance).toFixed(1)} - ${cumulativeChance.toFixed(1)} (${prize.chance}% of ${totalChance}) [Qty: ${prize.quantity}]${unlimitedTag}`);
+            const actualPercentage = ((prize.chance / totalChance) * 100).toFixed(2);
+            console.log(`      ${prize.name}: Range ${rangeStart.toFixed(1)}-${rangeEnd.toFixed(1)} | Chance: ${prize.chance}% of ${totalChance} = ${actualPercentage}% actual | Qty: ${prize.quantity}${unlimitedTag}`);
             if (random <= cumulativeChance && !selectedPrize) {
                 selectedPrize = prize;
-                console.log(`✅ Selected: ${prize.name}`);
+                console.log(`   ✅ Selected: ${prize.name} (random ${random.toFixed(3)} fell in range ${rangeStart.toFixed(1)}-${rangeEnd.toFixed(1)})`);
                 // Only decrease quantity if not unlimitedConsolation
                 if (!prize.unlimitedConsolation) {
                     const updatedPrize = { ...prize, quantity: prize.quantity - 1 };
                     storageManager.updatePrize(updatedPrize);
-                    console.log(`📦 ${prize.name} quantity: ${prize.quantity} → ${updatedPrize.quantity}`);
+                    console.log(`   📦 ${prize.name} quantity: ${prize.quantity} → ${updatedPrize.quantity}`);
                     if (updatedPrize.quantity === 0) {
-                        console.log(`🚫 ${prize.name} is now exhausted and will be removed from future spins!`);
+                        console.log(`   🚫 ${prize.name} is now exhausted and will be removed from future spins!`);
                     }
                     // Clear cache so next spin recalculates available prizes
                     this.clearPrizeCache();
                 } else {
-                    console.log(`♾️ ${prize.name} is unlimited - quantity remains at ${prize.quantity}`);
+                    console.log(`   ♾️ ${prize.name} is unlimited - quantity remains at ${prize.quantity}`);
                 }
                 break;
             }
@@ -320,7 +330,7 @@ class SlotMachine {
             console.log('⚠️ Fallback selected:', selectedPrize.name);
         }
         
-        return selectedPrize;
+        return { prize: selectedPrize, randomValue: random };
     }
 
     // Updated test function to account for quantity depletion and unlimited consolation
@@ -355,7 +365,7 @@ class SlotMachine {
                 break;
             }
             
-            const winner = this.selectPrizeByProbability(currentPrizes);
+            const { prize: winner } = this.selectPrizeByProbability(currentPrizes);
             if (winner) {
                 results[winner.name]++;
                 completedSpins++;
@@ -368,7 +378,15 @@ class SlotMachine {
         console.log('─'.repeat(95));
         
         const finalPrizes = storageManager.getPrizes();
-        Object.keys(results).forEach(prizeName => {
+        
+        // Sort prizes: lowest chance first (rarest prizes), highest chance last (consolation)
+        const sortedPrizeNames = Object.keys(results).sort((a, b) => {
+            const prizeA = prizes.find(p => p.name === a);
+            const prizeB = prizes.find(p => p.name === b);
+            return (prizeA?.chance || 0) - (prizeB?.chance || 0);
+        });
+        
+        sortedPrizeNames.forEach(prizeName => {
             const finalPrize = finalPrizes.find(p => p.name === prizeName);
             const wins = results[prizeName];
             const actualPercentage = ((wins / completedSpins) * 100).toFixed(2); // 2 decimals for accuracy
@@ -395,7 +413,8 @@ class SlotMachine {
     logSpin(winningPrize) {
         const logEntry = {
             prizeName: winningPrize.name,
-            gameMode: 'Probability'
+            gameMode: 'Probability',
+            randomValue: this.lastRandomValue || 0
         };
         storageManager.addLog(logEntry);
     }

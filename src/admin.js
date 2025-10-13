@@ -58,6 +58,12 @@ class AdminPanel {
             if (window.soundManager) window.soundManager.onButtonClick();
             this.savePrize();
         });
+        
+        // Run Probability Test button
+        document.getElementById('runProbabilityTest')?.addEventListener('click', () => {
+            if (window.soundManager) window.soundManager.onButtonClick();
+            this.runProbabilityTest();
+        });
 
         document.getElementById('cancelEdit').addEventListener('click', () => {
             if (window.soundManager) window.soundManager.onButtonClick();
@@ -1508,6 +1514,129 @@ class AdminPanel {
     refreshSettings() {
         // Settings tab now just shows information about probability mode
     }
+    
+    runProbabilityTest() {
+        const iterations = parseInt(document.getElementById('testIterations').value) || 1000;
+        const resultsDiv = document.getElementById('probabilityTestResults');
+        
+        // Show results div and display loading message
+        resultsDiv.style.display = 'block';
+        resultsDiv.textContent = `⏳ Running ${iterations} test spins...\n\nPlease wait...`;
+        
+        // Run test after a short delay to allow UI to update
+        setTimeout(() => {
+            try {
+                // Save current state to restore later
+                const originalPrizesJson = JSON.stringify(storageManager().getPrizes());
+                
+                // Get current prizes
+                const prizes = storageManager().getPrizes();
+                const results = {};
+                const originalQuantities = {};
+                const randomNumbers = []; // Track all random numbers generated
+                
+                // Initialize counters and save original quantities
+                prizes.forEach(prize => {
+                    results[prize.name] = 0;
+                    originalQuantities[prize.name] = prize.quantity;
+                });
+                
+                // Run test iterations
+                let completedSpins = 0;
+                for (let i = 0; i < iterations; i++) {
+                    const currentPrizes = storageManager().getPrizes();
+                    const availablePrizes = currentPrizes.filter(p => p.quantity > 0 || p.unlimitedConsolation);
+                    
+                    if (availablePrizes.length === 0) break;
+                    
+                    const totalChance = availablePrizes.reduce((sum, p) => sum + p.chance, 0);
+                    let random = Math.random() * totalChance;
+                    randomNumbers.push(random); // Track random number
+                    
+                    let cumulativeChance = 0;
+                    
+                    for (const prize of availablePrizes) {
+                        cumulativeChance += prize.chance;
+                        if (random <= cumulativeChance) {
+                            results[prize.name]++;
+                            if (!prize.unlimitedConsolation) {
+                                const updatedPrize = { ...prize, quantity: prize.quantity - 1 };
+                                storageManager().updatePrize(updatedPrize);
+                            }
+                            break;
+                        }
+                    }
+                    completedSpins++;
+                }
+                
+                // Get final state
+                const finalPrizes = storageManager().getPrizes();
+                
+                // Build results output in table format matching the image
+                let output = `📊 Final Results after ${completedSpins} spins:\n`;
+                output += `${'─'.repeat(105)}\n`;
+                
+                // Table header
+                output += `${'Prize'.padEnd(20)} ${'Wins'.padStart(8)} ${'Actual %'.padStart(12)} ${'Expected %'.padStart(14)} ${'Original Qty'.padStart(14)} ${'Remaining'.padStart(12)} ${'Status'.padStart(15)}\n`;
+                output += `${'─'.repeat(105)}\n`;
+                
+                // Sort prizes: lowest chance first (rarest prizes), highest chance last (consolation)
+                // This will show Grand Prize (1%), 2nd Prize (2%), 3rd Prize (3%), Consolation (94%)
+                const sortedPrizes = prizes.sort((a, b) => a.chance - b.chance);
+                
+                sortedPrizes.forEach(prize => {
+                    const count = results[prize.name] || 0;
+                    const actualPercent = (count / completedSpins * 100).toFixed(2);
+                    const expectedPercent = prize.chance.toFixed(2);
+                    const finalQty = finalPrizes.find(p => p.id === prize.id)?.quantity || 0;
+                    const originalQty = originalQuantities[prize.name];
+                    
+                    // Determine status
+                    let status = '';
+                    if (prize.unlimitedConsolation) {
+                        status = '♾️  UNLIMITED';
+                    } else if (finalQty > 0) {
+                        status = '✅ AVAILABLE';
+                    } else {
+                        status = '❌ EXHAUSTED';
+                    }
+                    
+                    // Truncate name if too long
+                    let displayName = prize.name.length > 18 ? prize.name.substring(0, 18) + '..' : prize.name;
+                    
+                    output += `${displayName.padEnd(20)} `;
+                    output += `${count.toString().padStart(8)} `;
+                    output += `${(actualPercent + '%').padStart(12)} `;
+                    output += `${(expectedPercent + '%').padStart(14)} `;
+                    output += `${originalQty.toString().padStart(14)} `;
+                    output += `${finalQty.toString().padStart(12)} `;
+                    output += `${status.padStart(15)}\n`;
+                });
+                
+                output += `${'─'.repeat(105)}\n\n`;
+                
+                // Summary
+                const totalWins = Object.values(results).reduce((sum, count) => sum + count, 0);
+                const prizesAvailable = finalPrizes.filter(p => p.quantity > 0 || p.unlimitedConsolation).length;
+                
+                output += `� SUMMARY:\n`;
+                output += `   • Total spins completed: ${completedSpins} / ${iterations}\n`;
+                output += `   • Total prizes won: ${totalWins}\n`;
+                output += `   • Prizes still available: ${prizesAvailable}\n\n`;
+                
+                output += `💡 NOTE: Quantities were modified during this test.\n`;
+                output += `   Use "Reset Game & Clear Logs" to restore original values.\n`;
+                
+                resultsDiv.textContent = output;
+                
+            } catch (error) {
+                resultsDiv.textContent = `❌ Error running test:\n${error.message}`;
+            }
+            
+            // Scroll to results
+            resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 100);
+    }
 
     resetGame() {
         storageManager().resetAll();
@@ -1538,10 +1667,11 @@ class AdminPanel {
             logEntry.className = 'log-entry';
             const date = new Date(log.timestamp).toLocaleString();
             const spinNumber = logs.length - index; // Reverse numbering so newest spin has highest number
+            const randomValueText = log.randomValue !== undefined ? `<br>Random: ${log.randomValue.toFixed(3)}` : '';
             logEntry.innerHTML = `
                 <strong>${date}</strong><br>
                 Spin #${spinNumber}<br>
-                Prize: ${log.prizeName}
+                Prize: ${log.prizeName}${randomValueText}
                 ${log.gameMode === 'duration' ? `<br>Remaining in deck: ${log.remainingInDeck}` : ''}
             `;
             container.appendChild(logEntry);
