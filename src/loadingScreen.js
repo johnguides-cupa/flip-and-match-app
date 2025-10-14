@@ -77,7 +77,6 @@ export class LoadingScreen {
                 </div>
                 
                 <h1 class="loading-title">Pursuing Potential</h1>
-                <h2 class="loading-subtitle">Slot Machine</h2>
                 
                 <div class="loading-progress">
                     <div class="progress-container">
