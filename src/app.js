@@ -275,6 +275,9 @@ class SlotMachine {
         // Performance optimization: Use cached available prizes
         const { prizes: availablePrizes, totalChance } = this.getAvailablePrizes(prizes);
         
+        // Store totalChance for logging
+        this.lastTotalChance = totalChance;
+        
         if (availablePrizes.length === 0) {
             console.log('❌ No prizes available - all quantities exhausted!');
             return { prize: null, randomValue: 0 };
@@ -414,7 +417,8 @@ class SlotMachine {
         const logEntry = {
             prizeName: winningPrize.name,
             gameMode: 'Probability',
-            randomValue: this.lastRandomValue || 0
+            randomValue: this.lastRandomValue || 0,
+            totalChance: this.lastTotalChance || 0
         };
         storageManager.addLog(logEntry);
     }

@@ -1668,10 +1668,11 @@ class AdminPanel {
             const date = new Date(log.timestamp).toLocaleString();
             const spinNumber = logs.length - index; // Reverse numbering so newest spin has highest number
             const randomValueText = log.randomValue !== undefined ? `<br>Random: ${log.randomValue.toFixed(3)}` : '';
+            const totalChanceText = log.totalChance !== undefined ? `<br>Total Chance: ${log.totalChance.toFixed(1)}%` : '';
             logEntry.innerHTML = `
                 <strong>${date}</strong><br>
                 Spin #${spinNumber}<br>
-                Prize: ${log.prizeName}${randomValueText}
+                Prize: ${log.prizeName}${randomValueText}${totalChanceText}
                 ${log.gameMode === 'duration' ? `<br>Remaining in deck: ${log.remainingInDeck}` : ''}
             `;
             container.appendChild(logEntry);
