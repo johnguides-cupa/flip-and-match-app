@@ -78,7 +78,7 @@ class SlotMachine {
             if (spinCooldown || animationManager.isSpinning) return;
             
             spinCooldown = true;
-            setTimeout(() => spinCooldown = false, 300); // 300ms cooldown
+            setTimeout(() => spinCooldown = false, 5500); // Long enough to cover full flip sequence (drumroll + 3 cards)
             
             if (window.soundManager) {
                 window.soundManager.onButtonClick();

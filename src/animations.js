@@ -54,7 +54,17 @@ class AnimationManager {
     }
 
     // ===== CARD GAME METHODS =====
-    
+
+    // Resolve an image src from the preloaded asset cache when available,
+    // falling back to a direct network request if not found.
+    getImageSrc(src) {
+        if (window.slotMachine && window.slotMachine.preloadedAssets) {
+            const asset = window.slotMachine.preloadedAssets.get(src);
+            if (asset && asset.element) return asset.element.src;
+        }
+        return src;
+    }
+
     // Initialize cards with prize images
     initializeCards(prizes) {
         const cards = document.querySelectorAll('.card');
@@ -72,7 +82,7 @@ class AnimationManager {
             const randomPrize = prizes[Math.floor(Math.random() * prizes.length)];
             const img = card.querySelector('.card-prize-image');
             if (img) {
-                img.src = randomPrize.image;
+                img.src = this.getImageSrc(randomPrize.image);
                 img.alt = randomPrize.name;
             }
         });
@@ -223,7 +233,7 @@ class AnimationManager {
         cards.forEach((card, index) => {
             const img = card.querySelector('.card-prize-image');
             if (img && cardPrizes[index]) {
-                img.src = cardPrizes[index].image;
+                img.src = this.getImageSrc(cardPrizes[index].image);
                 img.alt = cardPrizes[index].name;
             }
         });
@@ -321,31 +331,27 @@ class AnimationManager {
         const cards = document.querySelectorAll('.card');
         if (cards.length > 0) {
             // Card game mode
-            await this.flipCards(slotIcons);
-            
-            // Show prize popup
-            this.showPrizePopup(targetPrize);
-            
-            // Re-enable button
             const spinButton = document.getElementById('spinButton');
-            spinButton.disabled = false;
-            spinButton.querySelector('.button-text').textContent = 'FLIP!';
-            this.isSpinning = false;
-            
-            // Reset cards after popup is closed
-            const closeButton = document.getElementById('closePopup');
-            const resetHandler = () => {
+            try {
+                await this.flipCards(slotIcons);
+                this.showPrizePopup(targetPrize);
+            } catch (error) {
+                console.error('Error during card flip:', error);
+            } finally {
+                // Always re-enable button and clear spinning flag — even if something throws
+                spinButton.disabled = false;
+                spinButton.querySelector('.button-text').textContent = 'FLIP!';
+                this.isSpinning = false;
+            }
+
+            // { once: true } prevents listener stacking on consecutive flips
+            document.getElementById('closePopup').addEventListener('click', () => {
                 setTimeout(() => {
-                    // Unflip all cards
                     cards.forEach(card => card.classList.remove('flipped'));
-                    
-                    // Restart shuffle
                     this.initializeCards(prizes);
                 }, 300);
-                closeButton.removeEventListener('click', resetHandler);
-            };
-            closeButton.addEventListener('click', resetHandler);
-            
+            }, { once: true });
+
             return;
         }
         
