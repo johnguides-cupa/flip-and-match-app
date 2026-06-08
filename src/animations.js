@@ -1,108 +1,26 @@
-// Animation manager using GSAP with Performance Mode Support
+// Animation manager using GSAP
 class AnimationManager {
     constructor() {
         this.isSpinning = false;
         this.reelHeight = null; // Will be set dynamically
         this.idleTimelines = [];
-        this.performanceMode = 'high-quality'; // Default to high quality
-        
-        // Listen for performance mode changes
-        this.setupPerformanceModeListener();
     }
 
-    // Setup performance mode listener with retry logic
-    setupPerformanceModeListener() {
-        if (window.performanceManager) {
-            console.log('🎬 Setting up performance mode listener immediately');
-            window.performanceManager.addListener((mode, config) => {
-                this.onPerformanceModeChange(mode, config);
-            });
-            // Get current mode
-            this.performanceMode = window.performanceManager.getMode();
-        } else {
-            console.log('🎬 Performance manager not ready, setting up retry...');
-            // Retry every 500ms until performanceManager is available
-            const retryInterval = setInterval(() => {
-                if (window.performanceManager) {
-                    console.log('🎬 Performance manager found, setting up listener');
-                    window.performanceManager.addListener((mode, config) => {
-                        this.onPerformanceModeChange(mode, config);
-                    });
-                    this.performanceMode = window.performanceManager.getMode();
-                    clearInterval(retryInterval);
-                }
-            }, 500);
-        }
-    }
-
-    // Handle performance mode changes
-    onPerformanceModeChange(mode, config) {
-        this.performanceMode = mode;
-        console.log(`🎬 Animation system switched to: ${mode}`);
-        
-        // Apply immediate optimizations
-        if (mode === 'performance') {
-            this.enablePerformanceOptimizations();
-        } else {
-            this.disablePerformanceOptimizations();
-        }
-    }
-
-    // Enable performance optimizations
-    enablePerformanceOptimizations() {
-        // Force GPU acceleration on all animated elements
-        const animatedElements = document.querySelectorAll('.reel, .reel-strip, .reel-item, .prize-popup, .popup-content');
-        animatedElements.forEach(el => {
-            el.style.transform = 'translateZ(0)';
-            el.style.willChange = 'transform';
-            el.style.backfaceVisibility = 'hidden';
-        });
-    }
-
-    // Disable performance optimizations (restore high quality)
-    disablePerformanceOptimizations() {
-        const animatedElements = document.querySelectorAll('.reel, .reel-strip, .reel-item, .prize-popup, .popup-content');
-        animatedElements.forEach(el => {
-            el.style.transform = '';
-            el.style.willChange = '';
-            el.style.backfaceVisibility = '';
-        });
-    }
-
-    // Get animation settings based on current performance mode
+    // Get animation settings (high-quality always)
     getAnimationSettings() {
-        // Check for current performance mode from performanceManager if available
-        if (window.performanceManager) {
-            this.performanceMode = window.performanceManager.getMode();
-        }
-        
-        const isPerformanceMode = this.performanceMode === 'performance';
-        console.log(`🎬 Getting animation settings - Mode: ${this.performanceMode}, IsPerformanceMode: ${isPerformanceMode}`);
-        
         return {
-            // Spin settings - subtle but important differences
-            spinDuration: isPerformanceMode ? 0.08 : 0.12, // Slightly faster spins in performance mode
-            spinEase: "none", // Keep linear for both modes for consistent feel
-            stopDuration: isPerformanceMode ? 0.6 : 1.0, // Faster stops in performance mode
-            stopEase: isPerformanceMode ? "power2.out" : "power2.out", // Same easing, just faster
-
-            // Prize popup settings - minimal differences
-            popupScale: true, // Keep scaling for both modes
-            popupDuration: isPerformanceMode ? 0.3 : 0.4, // Slightly faster popup in performance mode
-            popupEase: isPerformanceMode ? "back.out(1.2)" : "back.out(1.7)", // Less bounce in performance mode
-
-            // Confetti settings - MORE VISIBLE and lively (only in high-quality mode)
-            enableConfetti: !isPerformanceMode, // Disable confetti in performance mode
-            confettiAmount: 7, // More particles for visibility
-            confettiInterval: 200, // Faster frequency for more bursts
-            confettiMultiplier: 2, // More confetti per burst
-
-            // Idle animations
-            enableIdleAnimations: !isPerformanceMode, // Disable idle animations in performance mode
-
-            // Performance optimizations (these are the real improvements)
-            enableGPUAcceleration: isPerformanceMode, // Enable GPU acceleration in performance mode
-            reduceAnimationComplexity: isPerformanceMode // Simplify animations in performance mode
+            spinDuration: 0.12,
+            spinEase: "none",
+            stopDuration: 1.0,
+            stopEase: "power2.out",
+            popupScale: true,
+            popupDuration: 0.4,
+            popupEase: "back.out(1.7)",
+            enableConfetti: true,
+            confettiAmount: 7,
+            confettiInterval: 200,
+            confettiMultiplier: 2,
+            enableIdleAnimations: true
         };
     }
 
@@ -172,8 +90,7 @@ class AnimationManager {
         
         this.shuffleTimeline = gsap.timeline({ repeat: -1 });
         
-        // Swap duration based on performance mode
-        const swapDuration = this.performanceMode === 'performance' ? 0.3 : 0.4;
+        const swapDuration = 0.4;
         
         // Create shuffle timeline with sequential swaps (no overlapping)
         let cumulativeTime = 0;
@@ -215,7 +132,7 @@ class AnimationManager {
             2: 'calc(50% + 160px)'
         };
         
-        const duration = this.performanceMode === 'performance' ? 0.3 : 0.4; // Faster swap animation
+        const duration = 0.4;
         
         // Get current computed left values
         const card1Left = card1.getBoundingClientRect().left - cardsArea.getBoundingClientRect().left;
@@ -317,8 +234,8 @@ class AnimationManager {
         }
         
         // Flip each card sequentially
-        const flipDuration = this.performanceMode === 'performance' ? 0.4 : 0.6;
-        const delayBetween = this.performanceMode === 'performance' ? 0.3 : 0.5;
+        const flipDuration = 0.6;
+        const delayBetween = 0.5;
         
         for (let i = 0; i < cards.length; i++) {
             // Add 1 second delay before first card flip (for drumroll)
@@ -500,9 +417,9 @@ class AnimationManager {
         // Seamless slot machine spin: all reels spin in a loop, then each stops in turn
         const settings = this.getAnimationSettings();
         const spinSpeed = settings.spinDuration;
-        const spinCycles = this.performanceMode === 'performance' ? 10 : 15; // Fewer cycles in performance mode
-        const staggerDelay = this.performanceMode === 'performance' ? 1.0 : 1.5; // Faster stagger in performance mode
-        const itemsToSpin = this.reelHeight * (this.performanceMode === 'performance' ? 6 : 10); // Less movement in performance mode
+        const spinCycles = 15;
+        const staggerDelay = 1.5;
+        const itemsToSpin = this.reelHeight * 10;
         const reelLoops = [];
         const reelPromises = reels.map((reel, i) => {
             return new Promise(resolve => {
@@ -683,6 +600,7 @@ class AnimationManager {
             }, 100);
         } else if (prizeType === 'grandPrize') {
             // Grand prize (lowest win chance) - show dancing cat and play congratulations
+            if (prizeTitle) prizeTitle.textContent = 'Congratulations!';
             if (prizeShield) {
                 prizeShield.innerHTML = `<img src="/assets/images/dancing-cat.gif" alt="Dancing Cat" style="width: 120px; height: 120px; object-fit: contain; border-radius: 12px;" onerror="this.src='/flip-and-match-app/assets/images/dancing-cat.gif'">`;
             }
@@ -731,7 +649,7 @@ class AnimationManager {
                     force3D: true,
                     onComplete: () => {
                         // Add a subtle pulse effect for "better luck next time"
-                        if (prizeType === 'consolation' && this.performanceMode === 'high-quality') {
+                        if (prizeType === 'consolation') {
                             gsap.to(popup.querySelector('.popup-content'), {
                                 scale: 1.02,
                                 duration: 0.3,

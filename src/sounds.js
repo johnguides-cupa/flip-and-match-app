@@ -1,123 +1,19 @@
-// Sound manager for the slot machine app with Performance Mode Support
+// Sound manager for the slot machine app
 class SoundManager {
     constructor() {
         this.sounds = {};
         this.audioContext = null;
         this.isMuted = false;
         this.volume = 0.5; // Default volume 50%
-        this.performanceMode = 'high-quality'; // Default to high quality
-        this.audioQueue = []; // Queue for performance mode
-        this.isPlayingCustomSound = false; // Track custom sound playback
+        this.isPlayingCustomSound = false;
         
         this.initializeSounds();
         this.createVolumeControl();
-        
-        // Listen for performance mode changes with delay to ensure performanceManager is available
-        this.setupPerformanceModeListener();
     }
 
-    // Setup performance mode listener with retry logic
-    setupPerformanceModeListener() {
-        const registerListener = () => {
-            if (window.performanceManager && window.performanceManager.addListener) {
-                console.log('🔗 Registering performance mode listener for sound manager');
-                window.performanceManager.addListener((mode, config) => {
-                    console.log(`🔊 Sound manager received mode change: ${mode}`);
-                    this.onPerformanceModeChange(mode, config);
-                });
-                return true;
-            }
-            return false;
-        };
-
-        // Try immediate registration
-        if (registerListener()) {
-            return;
-        }
-
-        // If immediate registration fails, retry with delays
-        console.log('⏳ Performance manager not ready, will retry...');
-        setTimeout(() => {
-            if (registerListener()) return;
-            
-            setTimeout(() => {
-                if (registerListener()) return;
-                
-                setTimeout(() => {
-                    if (!registerListener()) {
-                        console.warn('❌ Could not register performance mode listener after multiple attempts');
-                    }
-                }, 3000);
-            }, 1000);
-        }, 100);
-    }
-
-    // Handle performance mode changes
-    onPerformanceModeChange(mode, config) {
-        this.performanceMode = mode;
-        console.log(`🔊 Sound system switched to: ${mode}`);
-        
-        if (mode === 'performance') {
-            this.enablePerformanceOptimizations();
-        } else {
-            this.disablePerformanceOptimizations();
-        }
-        
-        // Update the performance mode label
-        this.updatePerformanceModeLabel();
-    }
-
-    // Enable performance optimizations for audio
-    enablePerformanceOptimizations() {
-        // Stop any background sounds immediately
-        this.stopBackgroundAmbience();
-        
-        // Clear audio queue
-        this.audioQueue = [];
-        
-        // Preload only essential sounds
-        this.preloadEssentialSounds();
-    }
-
-    // Disable performance optimizations (restore high quality)
-    disablePerformanceOptimizations() {
-        // Can restart background ambience if desired
-        // this.startBackgroundAmbience();
-    }
-
-    // Preload only essential sounds for performance mode
-    preloadEssentialSounds() {
-        // Only preload the most important sounds
-        const essentialSounds = ['congratulations', 'miaw', 'happy'];
-
-        Object.keys(this.customSounds).forEach(key => {
-            if (!essentialSounds.includes(key)) {
-                // Pause and reset non-essential sounds
-                const audio = this.customSounds[key];
-                if (audio) {
-                    audio.pause();
-                    audio.currentTime = 0;
-                }
-            }
-        });
-    }
-
-    // Check if sound should play based on performance mode
+    // Check if sound should play
     shouldPlaySound(soundType) {
         if (this.isMuted) return false;
-        
-        if (this.performanceMode === 'performance') {
-            // In performance mode, limit concurrent sounds
-            if (soundType === 'background' || soundType === 'ambience') {
-                return false; // No background sounds in performance mode
-            }
-            
-            // Don't overlap custom sounds in performance mode
-            if (this.isPlayingCustomSound && (soundType === 'congratulations' || soundType === 'miaw' || soundType === 'happy')) {
-                return false;
-            }
-        }
-        
         return true;
     }
 
@@ -153,41 +49,22 @@ class SoundManager {
     loadCustomSounds() {
         this.customSounds = {};
         
-        // Load congratulations sound with performance settings
+        // Load congratulations sound
         const congratsAudio = new Audio('./assets/sounds/Congratulations.mp3');
         congratsAudio.volume = this.volume;
-        
-        // Performance mode settings
-        if (this.performanceMode === 'performance') {
-            congratsAudio.preload = 'metadata'; // Only load metadata
-        } else {
-            congratsAudio.preload = 'auto'; // Preload entire file
-        }
-        
+        congratsAudio.preload = 'auto';
         this.customSounds.congratulations = congratsAudio;
 
-        // Load miaw sound with performance settings
+        // Load miaw sound
         const miawAudio = new Audio('./assets/sounds/miaw.mp3');
         miawAudio.volume = this.volume;
-        
-        if (this.performanceMode === 'performance') {
-            miawAudio.preload = 'metadata';
-        } else {
-            miawAudio.preload = 'auto';
-        }
-        
+        miawAudio.preload = 'auto';
         this.customSounds.miaw = miawAudio;
 
-        // Load happy happy happy sound with performance settings
+        // Load happy happy happy sound
         const happyAudio = new Audio('./assets/sounds/Happy Happy Happy.mp3');
         happyAudio.volume = this.volume;
-        
-        if (this.performanceMode === 'performance') {
-            happyAudio.preload = 'metadata';
-        } else {
-            happyAudio.preload = 'auto';
-        }
-        
+        happyAudio.preload = 'auto';
         this.customSounds.happy = happyAudio;
 
         // Handle loading errors gracefully
@@ -230,14 +107,13 @@ class SoundManager {
         };
     }
 
-    // Create a realistic spinning sound with performance mode support
+    // Create a realistic spinning sound
     createSpinSound() {
         if (!this.audioContext || this.isMuted) return;
 
-        // Performance mode optimizations
-        const duration = this.performanceMode === 'performance' ? 1.5 : 2.5; // Shorter duration for performance
-        const clickCount = this.performanceMode === 'performance' ? 4 : 8; // Fewer clicks for performance
-        const clickInterval = this.performanceMode === 'performance' ? 200 : 300; // Faster interval
+        const duration = 2.5;
+        const clickCount = 8;
+        const clickInterval = 300;
 
         const oscillator = this.audioContext.createOscillator();
         const gainNode = this.audioContext.createGain();
@@ -259,8 +135,8 @@ class SoundManager {
         filterNode.frequency.setValueAtTime(1000, this.audioContext.currentTime);
         filterNode.frequency.exponentialRampToValueAtTime(300, this.audioContext.currentTime + duration);
 
-        // Volume envelope - lower volume in performance mode
-        const volumeMultiplier = this.performanceMode === 'performance' ? 0.3 : 0.4;
+        // Volume envelope
+        const volumeMultiplier = 0.4;
         gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
         gainNode.gain.linearRampToValueAtTime(this.volume * volumeMultiplier, this.audioContext.currentTime + 0.1);
         gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + duration);
@@ -330,15 +206,9 @@ class SoundManager {
         }, 800);
     }
 
-    // Create ambient background sound (disabled in performance mode)
+    // Create ambient background sound
     createAmbientSound() {
         if (!this.audioContext || this.isMuted) return;
-
-        // Skip ambient sounds in performance mode
-        if (this.performanceMode === 'performance') {
-            console.log('🔊 Ambient sound skipped in performance mode');
-            return;
-        }
 
         // Create a subtle background hum
         const oscillator = this.audioContext.createOscillator();
@@ -374,34 +244,14 @@ class SoundManager {
         }
 
         try {
-            // Performance mode optimizations
-            if (this.performanceMode === 'performance') {
-                // Skip background and ambient sounds in performance mode
-                if (soundName === 'background' || soundName === 'ambient') {
-                    return;
-                }
-                
-                // Simplified audio context handling for performance
-                if (this.audioContext && this.audioContext.state === 'suspended') {
-                    this.audioContext.resume().then(() => {
-                        this.sounds[soundName]();
-                    }).catch(error => {
-                        console.warn('Failed to resume audio context:', error);
-                    });
-                } else {
+            if (this.audioContext && this.audioContext.state === 'suspended') {
+                this.audioContext.resume().then(() => {
                     this.sounds[soundName]();
-                }
+                }).catch(error => {
+                    console.warn('Failed to resume audio context:', error);
+                });
             } else {
-                // High quality mode - full audio context management
-                if (this.audioContext && this.audioContext.state === 'suspended') {
-                    this.audioContext.resume().then(() => {
-                        this.sounds[soundName]();
-                    }).catch(error => {
-                        console.warn('Failed to resume audio context:', error);
-                    });
-                } else {
-                    this.sounds[soundName]();
-                }
+                this.sounds[soundName]();
             }
         } catch (error) {
             console.warn('Error playing sound:', error);
@@ -519,58 +369,6 @@ class SoundManager {
                 background: rgba(255,215,0,0.2);
                 transform: scale(1.1);
             }
-
-            .performance-button {
-                background: rgba(52,152,219,0.9) !important;
-                border: 2px solid #3498db !important;
-                border-radius: 50% !important;
-                width: 50px !important;
-                height: 50px !important;
-                font-size: 1.5em !important;
-                cursor: pointer !important;
-                transition: all 0.3s ease !important;
-                backdrop-filter: blur(5px) !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                margin-left: 10px !important;
-                position: relative !important;
-            }
-
-            .performance-button:hover {
-                background: rgba(52,152,219,0.2);
-                transform: scale(1.1);
-            }
-
-            .performance-control {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                margin-left: 10px;
-            }
-
-            .performance-label {
-                background: rgba(0,0,0,0.8);
-                color: white;
-                padding: 8px 12px;
-                border-radius: 15px;
-                font-size: 0.9em;
-                font-weight: 500;
-                backdrop-filter: blur(5px);
-                border: 1px solid rgba(255,255,255,0.2);
-                white-space: nowrap;
-                transition: all 0.3s ease;
-            }
-
-            .performance-label.high-quality {
-                background: rgba(39, 174, 96, 0.9);
-                border-color: rgba(39, 174, 96, 0.5);
-            }
-
-            .performance-label.performance {
-                background: rgba(231, 76, 60, 0.9);
-                border-color: rgba(231, 76, 60, 0.5);
-            }
             
             .mute-button {
                 background: none;
@@ -659,17 +457,6 @@ class SoundManager {
                     height: 45px;
                     font-size: 1.3em;
                 }
-
-                .performance-button {
-                    width: 45px;
-                    height: 45px;
-                    font-size: 1.3em;
-                    margin-left: 8px;
-                }
-
-                .volume-slider {
-                    width: 80px;
-                }
             }
 
             @media (max-width: 480px) {
@@ -693,25 +480,6 @@ class SoundManager {
                     height: 40px;
                     font-size: 1.2em;
                 }
-
-                .performance-button {
-                    width: 40px;
-                    height: 40px;
-                    font-size: 1.2em;
-                    margin-left: 6px;
-                }
-
-                .performance-control {
-                    flex-direction: column;
-                    gap: 5px;
-                    margin-left: 6px;
-                }
-
-                .performance-label {
-                    font-size: 0.8em;
-                    padding: 4px 8px;
-                    border-radius: 10px;
-                }
             }
         `;
         document.head.appendChild(style);
@@ -720,89 +488,18 @@ class SoundManager {
         const adminButton = document.createElement('button');
         adminButton.className = 'admin-button';
         adminButton.title = 'Admin Access';
-        adminButton.innerHTML = '🤫'; // Hush emoji
+        adminButton.innerHTML = '🤫';
         adminButton.addEventListener('click', () => {
             if (window.showAdminLogin) {
                 window.showAdminLogin();
             }
         });
 
-        // Add performance mode button
-        const performanceButton = document.createElement('button');
-        performanceButton.className = 'performance-button';
-        performanceButton.title = 'Performance Settings';
-        performanceButton.innerHTML = '⚡'; // Lightning bolt emoji
-        
-        // Add performance mode label
-        const performanceLabel = document.createElement('span');
-        performanceLabel.className = 'performance-label';
-        performanceLabel.id = 'performance-mode-label';
-        
-        // Create performance control container
-        const performanceControl = document.createElement('div');
-        performanceControl.className = 'performance-control';
-        performanceControl.appendChild(performanceButton);
-        performanceControl.appendChild(performanceLabel);
-        
-        console.log('🔧 Creating performance button...');
-        
-        performanceButton.addEventListener('click', () => {
-            console.log('🔧 Performance button clicked!');
-            console.log('🔍 Debug - modeSelectionModal available:', !!window.modeSelectionModal);
-            
-            // Wait for modal to be available if not ready yet
-            const showModal = () => {
-                if (window.modeSelectionModal) {
-                    console.log('📋 Showing mode selection modal...');
-                    window.modeSelectionModal.show().then((selectedMode) => {
-                        console.log(`✅ Modal resolved with mode: ${selectedMode}`);
-                        // Force update the label after modal closes
-                        setTimeout(() => {
-                            this.updatePerformanceModeLabel();
-                        }, 500);
-                    }).catch((error) => {
-                        console.error('❌ Modal promise rejected:', error);
-                    });
-                } else {
-                    console.warn('⏳ Modal not ready yet, waiting...');
-                    // Try again after a short delay
-                    setTimeout(() => {
-                        if (window.modeSelectionModal) {
-                            console.log('📋 Modal now available, showing...');
-                            window.modeSelectionModal.show().then((selectedMode) => {
-                                console.log(`✅ Modal resolved with mode: ${selectedMode}`);
-                                setTimeout(() => {
-                                    this.updatePerformanceModeLabel();
-                                }, 500);
-                            });
-                        } else {
-                            console.error('❌ Mode selection modal still not found after waiting!');
-                            alert('Performance settings not available yet. Please try again in a moment.');
-                        }
-                    }, 100);
-                }
-            };
-            
-            showModal();
-        });
-
         bottomControls.appendChild(soundControl);
         bottomControls.appendChild(adminButton);
-        bottomControls.appendChild(performanceControl);
         
-        console.log('🔧 Performance button added to DOM');
-        
-        // Initialize mode label
-        this.updatePerformanceModeLabel();
-        
-        // Set up a periodic check to update the label (in case performanceManager loads later)
-        setTimeout(() => {
-            this.updatePerformanceModeLabel();
-        }, 1000);
-        
-        setTimeout(() => {
-            this.updatePerformanceModeLabel();
-        }, 3000);
+        // Initialize volume display
+        this.updateVolumeSlider();
 
         // Add event listeners
         document.getElementById('muteButton').addEventListener('click', () => {
@@ -1052,55 +749,23 @@ class SoundManager {
             return;
         }
 
-        // Check if sound should play based on performance mode
-        if (!this.shouldPlaySound(soundName)) {
-            return;
-        }
-
         try {
             const audio = this.customSounds[soundName];
-            
-            // Performance mode optimizations
-            if (this.performanceMode === 'performance') {
-                // Mark as playing to prevent overlaps
-                this.isPlayingCustomSound = true;
-                
-                // Shorter timeout for performance mode
-                setTimeout(() => {
-                    this.isPlayingCustomSound = false;
-                }, 500); // Reduced from potential longer duration
-                
-                // Lower quality but faster loading
-                audio.preload = 'metadata'; // Only load metadata, not entire file
-            } else {
-                // High quality mode - preload the entire file
-                audio.preload = 'auto';
-                
-                // Track playing state with longer duration
-                this.isPlayingCustomSound = true;
-                setTimeout(() => {
-                    this.isPlayingCustomSound = false;
-                }, 2000);
-            }
-            
-            audio.currentTime = 0; // Reset to beginning
+            audio.preload = 'auto';
+            this.isPlayingCustomSound = true;
+            setTimeout(() => {
+                this.isPlayingCustomSound = false;
+            }, 2000);
+
+            audio.currentTime = 0;
             audio.volume = this.volume;
-            
-            // Performance mode uses immediate play, high quality mode can wait for load
-            if (this.performanceMode === 'performance') {
-                audio.play().catch(error => {
+
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
                     console.warn(`Could not play ${soundName} sound:`, error);
                     this.isPlayingCustomSound = false;
                 });
-            } else {
-                // High quality mode - ensure audio is loaded before playing
-                const playPromise = audio.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(error => {
-                        console.warn(`Could not play ${soundName} sound:`, error);
-                        this.isPlayingCustomSound = false;
-                    });
-                }
             }
         } catch (error) {
             console.warn(`Error playing custom sound ${soundName}:`, error);
@@ -1124,42 +789,6 @@ class SoundManager {
         } catch (error) {
             console.warn('Error stopping custom sounds:', error);
         }
-    }
-
-    // Update performance mode label
-    updatePerformanceModeLabel() {
-        const label = document.getElementById('performance-mode-label');
-        console.log('🏷️ Updating performance label, element found:', !!label);
-        
-        if (!label) {
-            console.warn('❌ Performance label element not found');
-            return;
-        }
-
-        // Get current mode from performance manager
-        let currentMode = 'high-quality'; // default
-        let modeText = '🚀 High Quality';
-        
-        if (window.performanceManager && window.performanceManager.getMode) {
-            const mode = window.performanceManager.getMode();
-            console.log('🔍 Performance manager mode:', mode);
-            
-            if (mode === 'performance') {
-                currentMode = 'performance';
-                modeText = '⚡ Performance';
-            } else if (mode === 'high-quality') {
-                currentMode = 'high-quality';
-                modeText = '🚀 High Quality';
-            }
-        } else {
-            console.warn('❌ Performance manager not available for label update');
-        }
-
-        // Update label text and styling
-        label.textContent = modeText;
-        label.className = `performance-label ${currentMode}`;
-        
-        console.log(`✅ Performance label updated: ${modeText} (class: ${label.className})`);
     }
 
     onButtonClick() {
